@@ -15,4 +15,10 @@ public class ActiveRetrieveRequest {
 	public EventId eventId;
 	public int tick;
 	public Destination destination;
+	
+	public ActiveRetrieveRequest(EventId eventId, int tick, Destination destination) {
+		this.eventId = eventId;
+		this.tick = tick;
+		this.destination = destination;
+	}
 }
