@@ -96,4 +96,16 @@ local.properties
 # virtual machine crash logs, see http://www.java.com/en/download/help/error_hotspot.xml
 hs_err_pid*
 
+# Repast Simphony
+MessageCenter.log4j.properties
+data/
+docs/
+freezedried_data/
+icons/
+integration/
+lib/
+license.txt
+model_description.txt
+repast-licenses/
+
 # End of https://www.gitignore.io/api/java,eclipse
