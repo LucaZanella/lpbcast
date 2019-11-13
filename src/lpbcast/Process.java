@@ -63,7 +63,7 @@ public class Process {
 	 * @param processId the id of the process to be retrieved
 	 * @return The reference to the process with the given id
 	 */
-	public Process getProcessFromId(int processId) {
+	public Process getProcessById(int processId) {
 		// TODO
 		return null;
 	}
@@ -360,7 +360,7 @@ public class Process {
 		}
 		
 		for(Integer gossipTarget : gossipTargets) {
-			Process currentTarget = getProcessFromId(gossipTarget);
+			Process currentTarget = getProcessById(gossipTarget);
 			currentTarget.receive(gossip);
 		}
 		
@@ -379,7 +379,7 @@ public class Process {
 						Object[] viewKeys = view.keySet().toArray();
 						int target = (Integer) viewKeys[RandomHelper.nextIntFromTo(0, viewKeys.length)];
 						// send message to a random process in the view
-						getProcessFromId(target).receive(randMessage);
+						getProcessById(target).receive(randMessage);
 						// update the active request
 						ar.tick = this.getCurrentTick();
 						ar.destination = Destination.RANDOM;
@@ -387,7 +387,7 @@ public class Process {
 					case RANDOM:
 						RetrieveRequest origMessage = new RetrieveRequest(this.processId, ar.eventId);
 						// send message to the originator
-						getProcessFromId(ar.eventId.origin).receive(origMessage);
+						getProcessById(ar.eventId.origin).receive(origMessage);
 						// update the active request
 						ar.tick = this.getCurrentTick();
 						ar.destination = Destination.ORIGINATOR;
