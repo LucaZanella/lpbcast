@@ -11,12 +11,13 @@ import java.util.LinkedList;
 import java.util.Map;
 
 import repast.simphony.engine.environment.RunEnvironment;
+import repast.simphony.engine.schedule.ScheduledMethod;
 import repast.simphony.random.RandomHelper;
 
 /**
  * @author zanel
  * @author danie
- *
+ * @author coffee
  */
 public class Process {
 	
@@ -38,6 +39,8 @@ public class Process {
 	public static final int UNSUBS_VALIDITY = 100; // elements in the unSubs buffer are expire after this amount of tick has passed
 	public static final int LONG_AGO = 42; // Just for debugging purposes
 	public static final double K = 0.5; // Just for debugging purposes
+	public static final int MESSAGE_MAX_DELAY = 1; // a message takes at most this amount of ticks to reach destination
+	public static final boolean SYNC = true; // if set to false, message could have delays
 	
 	public Process(int processId, HashMap<Integer, Integer> view) {
 		this.processId = processId;
@@ -53,11 +56,38 @@ public class Process {
 	}
 	
 	public void receive(Message message) {
-		
+		double nextTick = getCurrentTick() + 1;
+		if(SYNC) {
+			// The message will be processes at the next tick
+			message.tick = nextTick;
+		} else {
+			//The message is received at the next tick + a random delay
+			message.tick = getCurrentTick() + RandomHelper.nextIntFromTo((int)nextTick, MESSAGE_MAX_DELAY);
+
+		}
+
+		receivedMessages.add(message);
 	}
 	
+	@ScheduledMethod(start=1 , interval=1)
 	public void step() {
-		
+		//extract from the receivedMessages queue the messages which arrive at the current tick
+		for(Message message : this.receivedMessages) {
+			if(message.tick <= this.getCurrentTick()) {
+				switch(message.type) {
+					case GOSSIP:
+						this.gossipHandler((Gossip)message);
+						break;
+					case RETRIEVE_REQUEST:
+						this.retrieveRequestHandler((RetrieveRequest)message);
+						break;
+					case RETRIEVE_REPLY:
+						this.retrieveReplyHandler((RetrieveReply)message);
+						break;
+						
+				}
+			}
+		}
 	}
 	
 	public void gossipHandler(Gossip gossipMessage) {
