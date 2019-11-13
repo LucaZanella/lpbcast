@@ -12,6 +12,7 @@ import repast.simphony.random.RandomHelper;
 
 /**
  * @author zanel
+ * @author danie
  *
  */
 public class Process {
