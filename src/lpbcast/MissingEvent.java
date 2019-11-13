@@ -11,10 +11,10 @@ package lpbcast;
 public class MissingEvent {
 	
 	public EventId eventId;
-	public int tick;
+	public double tick;
 	public int sender;
 	
-	public MissingEvent(EventId eventId, int tick, int sender) {
+	public MissingEvent(EventId eventId, double tick, int sender) {
 		this.eventId = eventId;
 		this.tick = tick;
 		this.sender = sender;

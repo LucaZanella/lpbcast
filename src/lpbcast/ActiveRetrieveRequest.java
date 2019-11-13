@@ -13,10 +13,10 @@ public class ActiveRetrieveRequest {
 	public enum Destination {SENDER, RANDOM, ORIGINATOR};
 	
 	public EventId eventId;
-	public int tick;
+	public double tick;
 	public Destination destination;
 	
-	public ActiveRetrieveRequest(EventId eventId, int tick, Destination destination) {
+	public ActiveRetrieveRequest(EventId eventId, double tick, Destination destination) {
 		this.eventId = eventId;
 		this.tick = tick;
 		this.destination = destination;

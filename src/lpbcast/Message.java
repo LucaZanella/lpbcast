@@ -12,10 +12,10 @@ public abstract class Message {
 	
 	public enum MessageType {GOSSIP, RETRIEVE_REQUEST, RETRIEVE_REPLY}
 	
-	public int tick;
+	public double tick;
 	public MessageType type;
 	
-	public Message(int tick, MessageType type) {
+	public Message(double tick, MessageType type) {
 		this.tick = tick;
 		this.type = type;
 	}
