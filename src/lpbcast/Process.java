@@ -3,6 +3,7 @@
  */
 package lpbcast;
 
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
@@ -10,6 +11,7 @@ import java.util.LinkedHashSet;
 import java.util.LinkedList;
 import java.util.Map;
 
+import javolution.context.Context;
 import repast.simphony.engine.environment.RunEnvironment;
 import repast.simphony.random.RandomHelper;
 
@@ -38,6 +40,7 @@ public class Process {
 	public static final int UNSUBS_VALIDITY = 100; // elements in the unSubs buffer are expire after this amount of tick has passed
 	public static final int LONG_AGO = 42; // Just for debugging purposes
 	public static final double K = 0.5; // Just for debugging purposes
+	public static final int F = 3; // Just for debugging purposes
 	
 	public Process(int processId, HashMap<Integer, Integer> view) {
 		this.processId = processId;
@@ -45,11 +48,21 @@ public class Process {
 	}
 	
 	/**
-	 * Method used to get the current tick of the simulation
+	 * Gets the current tick of the simulation
 	 * @return the current tick
 	 */
 	public double getCurrentTick() {
 		return RunEnvironment.getInstance().getCurrentSchedule().getTickCount();
+	}
+	
+	/**
+	 * Gets the reference of the process from its id
+	 * @param processId the id of the process to be retrieved
+	 * @return The reference to the process with the given id
+	 */
+	public Process getProcessFromId(int processId) {
+		// TODO
+		return null;
 	}
 	
 	public void receive(Message message) {
@@ -276,7 +289,51 @@ public class Process {
 	}
 	
 	public void gossip() {
+		HashSet<Integer> gossipSubs;
+		HashSet<Integer> gossipUnSubs;
+		HashSet<Event> gossipEvents;
+		HashSet<EventId> gossipEventIds;
 		
+		for(Event e : events) {
+			e.age += 1;
+		}
+		
+		gossipSubs = (HashSet<Integer>) subs.keySet();
+		gossipSubs.add(processId);
+		
+		gossipUnSubs = (HashSet<Integer>) unSubs.keySet();
+		
+		gossipEvents = new HashSet<Event>();
+		for(Event e : events) {
+			// avoid multiple processes share the same reference
+			gossipEvents.add(e.clone());
+		}
+		
+		gossipEventIds = new HashSet<EventId>();
+		for(EventId eId : eventIds) {
+			// avoid multiple processes share the same reference
+			gossipEventIds.add(eId.clone());
+		}
+		
+		// create a gossip message
+		Gossip gossip = new Gossip(processId, gossipEvents, gossipSubs, gossipUnSubs, gossipEventIds);
+		
+		// get a random key from the buffer HashMap
+		Object[] bufferKeys = view.keySet().toArray();
+		HashSet<Integer> gossipTargets = new HashSet<>();
+		
+		while(gossipTargets.size() < F) {
+			int target = (Integer) bufferKeys[RandomHelper.nextIntFromTo(0, bufferKeys.length)];
+			// adds target only if it is not already contained
+			gossipTargets.add(target);
+		}
+		
+		for(Integer gossipTarget : gossipTargets) {
+			Process currentTarget = getProcessFromId(gossipTarget);
+			currentTarget.receive(gossip);
+		}
+		
+		events.clear();
 	}
 	
 	public void lpbDelivery(Event event) {
