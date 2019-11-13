@@ -9,6 +9,7 @@ import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.Map;
 
+import lpbcast.ActiveRetrieveRequest.Destination;
 import repast.simphony.engine.environment.RunEnvironment;
 import repast.simphony.engine.schedule.ScheduledMethod;
 import repast.simphony.random.RandomHelper;
@@ -42,6 +43,7 @@ public class Process {
 	public static final int MESSAGE_MAX_DELAY = 1; // a message takes at most this amount of ticks to reach destination
 	public static final boolean SYNC = true; // if set to false, message could have delays
 	public static final int F = 3; // Just for debugging purposes
+	public static final int RECOVERY_TIMEOUT = 10;
 	
 	public Process(int processId, HashMap<Integer, Integer> view) {
 		this.processId = processId;
@@ -365,6 +367,41 @@ public class Process {
 		events.clear();
 	}
 	
+	public void updsateActiveRetrieveRequests() {
+		Iterator<ActiveRetrieveRequest> it = activeRetrieveRequest.iterator();
+		while(it.hasNext()) {
+			ActiveRetrieveRequest ar = it.next();
+			if(this.getCurrentTick() - ar.tick >= RECOVERY_TIMEOUT) {
+				switch(ar.destination) {
+					case SENDER:
+						RetrieveRequest randMessage = new RetrieveRequest(this.processId, ar.eventId);
+						// get a random processId from the view
+						Object[] viewKeys = view.keySet().toArray();
+						int target = (Integer) viewKeys[RandomHelper.nextIntFromTo(0, viewKeys.length)];
+						// send message to a random process in the view
+						getProcessFromId(target).receive(randMessage);
+						// update the active request
+						ar.tick = this.getCurrentTick();
+						ar.destination = Destination.RANDOM;
+						break;
+					case RANDOM:
+						RetrieveRequest origMessage = new RetrieveRequest(this.processId, ar.eventId);
+						// send message to the originator
+						getProcessFromId(ar.eventId.origin).receive(origMessage);
+						// update the active request
+						ar.tick = this.getCurrentTick();
+						ar.destination = Destination.ORIGINATOR;
+						break;
+					case ORIGINATOR:
+						// the retrieve message is lost
+						it.remove();
+						break;
+					default:
+						assert false;
+					}
+			}
+		}
+	}
 	public void lpbDelivery(Event event) {
 		
 	}
