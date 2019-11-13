@@ -113,7 +113,46 @@ public class Process {
 	}
 	
 	public void removeOldestNotifications() {
-
+		boolean noMoreOutOfDate = false;
+		
+		// remove elements from events buffer that were received a long time ago wrt
+		// to more recent messages from the same broadcast source
+		while((events.size() > EVENTS_MAX_SIZE) & !noMoreOutOfDate) {
+			for(Event e1 : events) {
+				for(Event e2 : events) {
+					// the message is received a long time ago wrt more recent messages
+					// from the same broadcast source 
+					// this implementation removes elements in following positions
+					if((e1.eventId.origin == e2.eventId.origin) & ((e2.age - e1.age) > LONG_AGO)) {
+						events.remove(e2);
+						// if the map previously contained a mapping for the key, the old value is replaced
+						archivedEvents.put(e2, OBSOLETE_UNSUB);
+					}
+				}
+			}
+			noMoreOutOfDate = true;
+		}
+		
+		// remove elements from events buffer with the largest age
+		while(events.size() > EVENTS_MAX_SIZE) {
+			Event oldestEvent = null;
+			
+			// find the oldest event
+			for(Event e : events) {
+				// first iteration
+				if (oldestEvent == null) {
+					oldestEvent = e;
+				} else {
+					if(e.age > oldestEvent.age) {
+						oldestEvent = e;
+					}
+				}
+			}
+			
+			events.remove(oldestEvent);
+			// if the map previously contained a mapping for the key, the old value is replaced
+			archivedEvents.put(oldestEvent, OBSOLETE_UNSUB);
+		}
 	}
 	
 	public void updateEventIds(HashSet<EventId> gossipEventIds) {
