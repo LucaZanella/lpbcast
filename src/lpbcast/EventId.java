@@ -25,6 +25,11 @@ public class EventId {
 		this.origin = origin;
 	}
 	
+	public EventId(EventId eId) {
+		this.id = eId.id;
+		this.origin = eId.origin;
+	}
+	
 	@Override
 	public boolean equals(Object obj) {
 		if (this == obj)
@@ -43,4 +48,13 @@ public class EventId {
 			return false;
 		return true;
 	}
+	
+	/**
+	 * Returns a new object which is the exact copy of the event on which the method
+	 * is called
+	 */
+	public EventId clone() {
+		return new EventId(this);
+	}
+	
 }

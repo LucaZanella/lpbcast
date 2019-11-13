@@ -19,4 +19,9 @@ public abstract class Message {
 		this.tick = tick;
 		this.type = type;
 	}
+	
+	public Message(MessageType type) {
+		this.tick = -1; // -1 means that the tick will be set during the sending of the message
+		this.type = type;
+	}
 }
