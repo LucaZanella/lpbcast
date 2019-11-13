@@ -9,9 +9,12 @@ import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.Map;
 
+import repast.simphony.context.Context;
 import repast.simphony.engine.environment.RunEnvironment;
 import repast.simphony.engine.schedule.ScheduledMethod;
 import repast.simphony.random.RandomHelper;
+import repast.simphony.util.ContextUtils;
+import repast.simphony.util.collections.IndexedIterable;
 
 /**
  * @author zanel
@@ -59,11 +62,23 @@ public class Process {
 	/**
 	 * Gets the reference of the process from its id
 	 * @param processId the id of the process to be retrieved
-	 * @return The reference to the process with the given id
+	 * @return The reference to the process with the given id if it exists, null otherwise
 	 */
-	public Process getProcessFromId(int processId) {
-		// TODO
-		return null;
+	public Process getProcessById(int processId) {
+		// retrieves the context of the current process
+		Process target = null;
+		Context<Object> context = ContextUtils.getContext(this);
+		IndexedIterable<Object> collection =  context.getObjects(Process.class);
+		Iterator<Object> iterator = collection.iterator();
+		
+		while(iterator.hasNext() & target == null) {
+			Process process = (Process) iterator.next();
+			if(process.processId == processId) {
+				target = process;
+			}
+		}
+		
+		return target;
 	}
 	
 	public void receive(Message message) {
@@ -358,7 +373,7 @@ public class Process {
 		}
 		
 		for(Integer gossipTarget : gossipTargets) {
-			Process currentTarget = getProcessFromId(gossipTarget);
+			Process currentTarget = getProcessById(gossipTarget);
 			currentTarget.receive(gossip);
 		}
 		
