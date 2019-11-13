@@ -25,7 +25,7 @@ public class Process {
 	public HashMap<Integer, Integer> view;
 	public LinkedList<Message> receivedMessages;
 	public HashSet<Event> events;
-	public LinkedHashSet<EventId> eventIds;
+	public LinkedList<EventId> eventIds;
 	public HashMap<Integer, Integer> subs;
 	public HashMap<Integer, Double> unSubs; //processId, tick in which element was added to buffer
 	public HashSet<MissingEvent> retrieve;
@@ -34,6 +34,7 @@ public class Process {
 	
 	public static final int EVENTS_MAX_SIZE = 42; // Just for debugging purposes
 	public static final int UNSUBS_MAX_SIZE = 42; // Just for debugging purposes
+	public static final int EVENTIDS_MAX_SIZE = 42;
 	public static final int VIEW_MAX_SIZE = 42; // Just for debugging purposes
 	public static final int SUBS_MAX_SIZE = 42; // Just for debugging purposes
 	public static final int UNSUBS_VALIDITY = 100; // elements in the unSubs buffer are expire after this amount of tick has passed
@@ -180,7 +181,6 @@ public class Process {
 	public void retrieveReplyHandler(RetrieveReply retrieveReplyMessage) {
 		
 	}
-	
 	public void updateUnSubs(HashSet<Integer> gossipUnSubs) {
 		
 	}
@@ -298,7 +298,9 @@ public class Process {
 	}
 	
 	public void trimEventIds() {
-		
+		while(this.eventIds.size() > EVENTIDS_MAX_SIZE) {
+			eventIds.remove();
+		}
 	}
 	
 	public void retrieveMissingMessages() {
