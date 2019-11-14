@@ -8,8 +8,8 @@ import java.util.HashSet;
 import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.Map;
-
 import repast.simphony.context.Context;
+import lpbcast.ActiveRetrieveRequest.Destination;
 import repast.simphony.engine.environment.RunEnvironment;
 import repast.simphony.engine.schedule.ScheduledMethod;
 import repast.simphony.random.RandomHelper;
@@ -45,6 +45,8 @@ public class Process {
 	public static final int MESSAGE_MAX_DELAY = 1; // a message takes at most this amount of ticks to reach destination
 	public static final boolean SYNC = true; // if set to false, message could have delays
 	public static final int F = 3; // Just for debugging purposes
+	public static final int RECOVERY_TIMEOUT = 10; //Retransmission timeout to different destinations
+	public static final int K_RECOVERY = 10; // Enough tick passed eventId is eligible for recovery
 	
 	public Process(int processId, HashMap<Integer, Integer> view) {
 		this.processId = processId;
@@ -120,8 +122,14 @@ public class Process {
 						break;
 						
 				}
+				this.receivedMessages.remove(message);
 			}
 		}
+		
+		
+	
+		//Check missing events
+		this.retrieveMissingMessages();
 	}
 	
 	public void gossipHandler(Gossip gossipMessage) {
@@ -154,36 +162,19 @@ public class Process {
 		}
 		
 		//trim view buffer (by adding removed element to subs)
-		while(view.size() > VIEW_MAX_SIZE) {
-			int target = selectProcess(view);
-			int frequency = view.remove(target);
-			subs.put(target, frequency);
-		}
+		this.trimView();
 		
-		//trim subs buffer (by removing random element)
-		while(subs.size() > SUBS_MAX_SIZE) {
-			int target = selectProcess(subs);
-			subs.remove(target);
-		}
+		//trim subs buffer 
+		this.trimSubs();
 		
 		// end of method updateViewsAndSubs()
 		
 		// beginning of method updateEvents()
 		for(Event gossipEvent : gossipMessage.events) {
-			if(!eventIds.contains(gossipEvent.eventId)) {
-				events.add(gossipEvent);
-				lpbDelivery(gossipEvent);
-				eventIds.add(gossipEvent.eventId);
-			}
-			
-			for(Event event : events) {
-				if(gossipEvent.eventId.equals(event.eventId) & (event.age < gossipEvent.age)) {
-					event.age = gossipEvent.age;
-				}
-			}
+			this.processEvent(gossipEvent);
 		}
 		
-		removeOldestNotifications();
+		trimEvents();
 		// end of method updateEvents()
 		
 		// begin of method updateEventIds
@@ -208,14 +199,36 @@ public class Process {
 	}
 	
 	public void retrieveRequestHandler(RetrieveRequest retrieveRequestMessage) {
-		
+		EventId id = retrieveRequestMessage.eventId;
+		// 1 -> Check if the event with that id is inside events
+		for(Event ev : this.events) {
+			if(ev.eventId.equals(id)) {
+				RetrieveReply replyMessage = new RetrieveReply(this.processId, ev.clone());
+				this.getProcessById(retrieveRequestMessage.sender).receive(replyMessage);
+			}
+		}
+		// 2 -> Check if the event with that id is inside archivedEvents
+		for(Map.Entry<Event, Double> entry : this.archivedEvents.entrySet()) {
+			if(entry.getKey().eventId.equals(id)) {
+				RetrieveReply replyMessage = new RetrieveReply(this.processId, entry.getKey().clone());
+				this.getProcessById(retrieveRequestMessage.sender).receive(replyMessage);
+			}
+		}
 	}
 	
 	public void retrieveReplyHandler(RetrieveReply retrieveReplyMessage) {
-		
-	}
-	public void updateUnSubs(HashSet<Integer> gossipUnSubs) {
-		
+		Iterator<ActiveRetrieveRequest> it = this.activeRetrieveRequest.iterator();
+		while(it.hasNext()) {
+			ActiveRetrieveRequest ar = it.next();
+			if(retrieveReplyMessage.event.eventId.equals(ar.eventId)) {
+				// Remove the element in activeRequest
+				it.remove();
+				// Process event received
+				this.processEvent(retrieveReplyMessage.event);
+				// Trim event buffer
+				trimEvents();
+			}
+		}
 	}
 	
 	public void trimUnSubs() {
@@ -229,7 +242,7 @@ public class Process {
 				}
 			}	
 		}
-		
+		trimEvents();
 		while(unSubs.size() > UNSUBS_MAX_SIZE) {
 			// second trim is done by sampling random element
 			// get a random key from the buffer HashMap
@@ -239,16 +252,19 @@ public class Process {
 		}
 	}
 	
-	public void updateViewsAndSubs(HashSet<Integer> gossipSubs) {
-
-	}
-	
 	public void trimView() {
-		
+		while(view.size() > VIEW_MAX_SIZE) {
+			int target = selectProcess(view);
+			int frequency = view.remove(target);
+			subs.put(target, frequency);
+		}
 	}
 	
 	public void trimSubs() {
-		
+		while(subs.size() > SUBS_MAX_SIZE) {
+			int target = selectProcess(subs);
+			subs.remove(target);
+		}
 	}
 	
 	public Integer selectProcess(HashMap<Integer, Integer> buffer) {
@@ -282,11 +298,8 @@ public class Process {
 		return target;
 	}
 	
-	public void updateEvents(HashSet<Event> gossipEvents) {
-		
-	}
 	
-	public void removeOldestNotifications() {	
+	public void trimEvents() {	
 		// remove elements from events buffer that were received a long time ago wrt
 		// to more recent messages from the same broadcast source
 		if(events.size() > EVENTS_MAX_SIZE) {
@@ -326,8 +339,18 @@ public class Process {
 		}
 	}
 	
-	public void updateEventIds(HashSet<EventId> gossipEventIds) {
+	public void processEvent(Event newEvent) {
+		if(!eventIds.contains(newEvent.eventId)) {
+			events.add(newEvent);
+			lpbDelivery(newEvent);
+			eventIds.add(newEvent.eventId);
+		}
 		
+		for(Event event : events) {
+			if(newEvent.eventId.equals(event.eventId) & (event.age < newEvent.age)) {
+				event.age = newEvent.age;
+			}
+		}
 	}
 	
 	public void trimEventIds() {
@@ -337,7 +360,25 @@ public class Process {
 	}
 	
 	public void retrieveMissingMessages() {
-		
+		//Update active request, checking if timeout occurs
+		this.updateActiveRetrieveRequests();
+		//Check if new request need to be performed
+		Iterator<MissingEvent> it = this.retrieve.iterator();
+		while(it.hasNext()){
+			MissingEvent me = it.next();
+			if(this.getCurrentTick() - me.tick > K_RECOVERY) {
+				if(!this.eventIds.contains(me.eventId)) {
+					// Create end send a retrieve message to the sender
+					RetrieveRequest retrieveMessage = new RetrieveRequest(me.sender, me.eventId);
+					this.getProcessById(me.sender).receive(retrieveMessage);
+					// Create and add a new ActiveRequest
+					ActiveRetrieveRequest ar = new ActiveRetrieveRequest(me.eventId, this.getCurrentTick(), Destination.SENDER);
+					this.activeRetrieveRequest.add(ar);
+				}
+				// In any case, remove the message from the retrieve queue (either received or request sent)
+				it.remove();
+			}
+		}
 	}
 	
 	public void gossip() {
@@ -388,8 +429,44 @@ public class Process {
 		events.clear();
 	}
 	
+	public void updateActiveRetrieveRequests() {
+		Iterator<ActiveRetrieveRequest> it = activeRetrieveRequest.iterator();
+		while(it.hasNext()) {
+			ActiveRetrieveRequest ar = it.next();
+			if(this.getCurrentTick() - ar.tick >= RECOVERY_TIMEOUT) {
+				switch(ar.destination) {
+					case SENDER:
+						RetrieveRequest randMessage = new RetrieveRequest(this.processId, ar.eventId);
+						// get a random processId from the view
+						Object[] viewKeys = view.keySet().toArray();
+						int target = (Integer) viewKeys[RandomHelper.nextIntFromTo(0, viewKeys.length)];
+						// send message to a random process in the view
+						getProcessById(target).receive(randMessage);
+						// update the active request
+						ar.tick = this.getCurrentTick();
+						ar.destination = Destination.RANDOM;
+						break;
+					case RANDOM:
+						RetrieveRequest origMessage = new RetrieveRequest(this.processId, ar.eventId);
+						// send message to the originator
+						getProcessById(ar.eventId.origin).receive(origMessage);
+						// update the active request
+						ar.tick = this.getCurrentTick();
+						ar.destination = Destination.ORIGINATOR;
+						break;
+					case ORIGINATOR:
+						// the retrieve message is lost
+						it.remove();
+						break;
+					default:
+						assert false;
+					}
+			}
+		}
+	}
+	
 	public void lpbDelivery(Event event) {
-		
+		System.out.println("Deliver event " + event.eventId.id);
 	}
 	
 	public void lpbCast() {
