@@ -3,12 +3,16 @@
  */
 package lpbcast;
 
+import java.util.ArrayList;
+import java.util.Collection;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.Map;
 import java.util.UUID;
+
+import com.sun.xml.internal.ws.policy.privateutil.PolicyUtils.Collections;
 
 import repast.simphony.context.Context;
 import lpbcast.ActiveRetrieveRequest.Destination;
@@ -41,6 +45,7 @@ public class Process {
 	public static final int EVENTIDS_MAX_SIZE = 42;
 	public static final int VIEW_MAX_SIZE = 42; // Just for debugging purposes
 	public static final int SUBS_MAX_SIZE = 42; // Just for debugging purposes
+	public static final int ARCHIVED_MAX_SIZE = 42; // Just for debugging purposes
 	public static final int UNSUBS_VALIDITY = 100; // elements in the unSubs buffer are expire after this amount of tick has passed
 	public static final int LONG_AGO = 42; // Just for debugging purposes
 	public static final double K = 0.5; // Just for debugging purposes
@@ -164,7 +169,7 @@ public class Process {
 		}
 		
 		//trim view buffer (by adding removed element to subs)
-		this.trimView();
+		this.trimView();  
 		
 		//trim subs buffer 
 		this.trimSubs();
@@ -338,6 +343,22 @@ public class Process {
 			events.remove(oldestEvent);
 			// if the map previously contained a mapping for the key, the old value is replaced
 			archivedEvents.put(oldestEvent, getCurrentTick());
+		}
+	}
+	
+	public void trimArchivedEvents() {
+		while(this.archivedEvents.size() > ARCHIVED_MAX_SIZE) {
+			Event minKey = null;
+			Double minValue = Double.MAX_VALUE; 
+			//Find oldest event
+			for(Map.Entry<Event, Double> entry : this.archivedEvents.entrySet()) {
+				if(entry.getValue() < minValue) {
+					minValue = entry.getValue();
+					minKey = entry.getKey();
+				}
+			}
+			// If it exists, remove it
+			this.archivedEvents.remove(minKey);
 		}
 	}
 	
