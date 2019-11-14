@@ -49,6 +49,14 @@ public class Process {
 	public Process(int processId, HashMap<Integer, Integer> view) {
 		this.processId = processId;
 		this.view = view;
+		this.receivedMessages = new LinkedList<>();
+		this.events = new HashSet<>();
+		this.eventIds = new LinkedList<>();
+		this.subs = new HashMap<>();
+		this.unSubs = new HashMap<>();
+		this.retrieve = new HashSet<>();
+		this.archivedEvents = new HashMap<>();
+		this.activeRetrieveRequest = new HashSet<>();
 	}
 	
 	/**
