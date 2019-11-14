@@ -8,6 +8,8 @@ import java.util.HashSet;
 import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.Map;
+import java.util.UUID;
+
 import repast.simphony.context.Context;
 import lpbcast.ActiveRetrieveRequest.Destination;
 import repast.simphony.engine.environment.RunEnvironment;
@@ -177,7 +179,7 @@ public class Process {
 		trimEvents();
 		// end of method updateEvents()
 		
-		// begin of method updateEventIds
+		// begin of method updateEventIdse
 		for(EventId eventId : gossipMessage.eventIds) {
 			if(!eventIds.contains(eventId)) {
 				// the event with this id is missing
@@ -470,6 +472,11 @@ public class Process {
 	}
 	
 	public void lpbCast() {
+		//Generate a new Event
+		Event newEvent = new Event(new EventId(UUID.randomUUID(), this.processId), 0);
+		// Add event to events buffer and the relative id inside eventIds
+		this.events.add(newEvent);
+		this.eventIds.add(newEvent.eventId);
 		
 	}
 }

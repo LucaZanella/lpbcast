@@ -6,14 +6,14 @@ package lpbcast;
 /**
  * @author zanel
  * @author danie
- *
+ * @author coffee
  */
 public class Event {
 
 	public EventId eventId;
 	public int age;
 	
-	public Event(EventId eventId, int tick, int age) {
+	public Event(EventId eventId,  int age) {
 		this.eventId = eventId;
 		this.age = age;
 	}
