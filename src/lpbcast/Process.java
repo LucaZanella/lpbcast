@@ -10,7 +10,6 @@ import java.util.LinkedList;
 import java.util.Map;
 
 import lpbcast.ActiveRetrieveRequest.Destination;
-import lpbcast.Message.MessageType;
 import repast.simphony.engine.environment.RunEnvironment;
 import repast.simphony.engine.schedule.ScheduledMethod;
 import repast.simphony.random.RandomHelper;
@@ -141,17 +140,10 @@ public class Process {
 		}
 		
 		//trim view buffer (by adding removed element to subs)
-		while(view.size() > VIEW_MAX_SIZE) {
-			int target = selectProcess(view);
-			int frequency = view.remove(target);
-			subs.put(target, frequency);
-		}
+		this.trimView();
 		
-		//trim subs buffer (by removing random element)
-		while(subs.size() > SUBS_MAX_SIZE) {
-			int target = selectProcess(subs);
-			subs.remove(target);
-		}
+		//trim subs buffer 
+		this.trimSubs();
 		
 		// end of method updateViewsAndSubs()
 		
@@ -160,7 +152,7 @@ public class Process {
 			this.processEvent(gossipEvent);
 		}
 		
-		removeOldestNotifications();
+		trimEvents();
 		// end of method updateEvents()
 		
 		// begin of method updateEventIds
@@ -212,12 +204,9 @@ public class Process {
 				// Process event received
 				this.processEvent(retrieveReplyMessage.event);
 				// Trim event buffer
-				removeOldestNotifications();
+				trimEvents();
 			}
 		}
-	}
-	public void updateUnSubs(HashSet<Integer> gossipUnSubs) {
-		
 	}
 	
 	public void trimUnSubs() {
@@ -231,7 +220,7 @@ public class Process {
 				}
 			}	
 		}
-		removeOldestNotifications();
+		trimEvents();
 		while(unSubs.size() > UNSUBS_MAX_SIZE) {
 			// second trim is done by sampling random element
 			// get a random key from the buffer HashMap
@@ -241,16 +230,19 @@ public class Process {
 		}
 	}
 	
-	public void updateViewsAndSubs(HashSet<Integer> gossipSubs) {
-
-	}
-	
 	public void trimView() {
-		
+		while(view.size() > VIEW_MAX_SIZE) {
+			int target = selectProcess(view);
+			int frequency = view.remove(target);
+			subs.put(target, frequency);
+		}
 	}
 	
 	public void trimSubs() {
-		
+		while(subs.size() > SUBS_MAX_SIZE) {
+			int target = selectProcess(subs);
+			subs.remove(target);
+		}
 	}
 	
 	public Integer selectProcess(HashMap<Integer, Integer> buffer) {
@@ -284,11 +276,8 @@ public class Process {
 		return target;
 	}
 	
-	public void updateEvents(HashSet<Event> gossipEvents) {
-		
-	}
 	
-	public void removeOldestNotifications() {	
+	public void trimEvents() {	
 		// remove elements from events buffer that were received a long time ago wrt
 		// to more recent messages from the same broadcast source
 		if(events.size() > EVENTS_MAX_SIZE) {
@@ -340,10 +329,6 @@ public class Process {
 				event.age = newEvent.age;
 			}
 		}
-	}
-	
-	public void updateEventIds(HashSet<EventId> gossipEventIds) {
-		
 	}
 	
 	public void trimEventIds() {
@@ -457,8 +442,9 @@ public class Process {
 			}
 		}
 	}
+	
 	public void lpbDelivery(Event event) {
-		
+		System.out.println("Deliver event " + event.eventId.id);
 	}
 	
 	public void lpbCast() {
