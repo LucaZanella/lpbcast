@@ -3,8 +3,6 @@
  */
 package lpbcast;
 
-import java.util.ArrayList;
-import java.util.Collection;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
@@ -12,10 +10,8 @@ import java.util.LinkedList;
 import java.util.Map;
 import java.util.UUID;
 
-import com.sun.xml.internal.ws.policy.privateutil.PolicyUtils.Collections;
-
-import repast.simphony.context.Context;
 import lpbcast.ActiveRetrieveRequest.Destination;
+import repast.simphony.context.Context;
 import repast.simphony.engine.environment.RunEnvironment;
 import repast.simphony.engine.schedule.ScheduledMethod;
 import repast.simphony.random.RandomHelper;
@@ -39,6 +35,8 @@ public class Process {
 	public HashSet<MissingEvent> retrieve;
 	public HashMap<Event, Double> archivedEvents; //processId, tick in which element was added to buffer
 	public HashSet<ActiveRetrieveRequest> activeRetrieveRequest;
+	public boolean isUnsubscribbed;
+	public Double unSubscriptionTick; 
 	
 	public static final int EVENTS_MAX_SIZE = 42; // Just for debugging purposes
 	public static final int UNSUBS_MAX_SIZE = 42; // Just for debugging purposes
@@ -66,6 +64,8 @@ public class Process {
 		this.retrieve = new HashSet<>();
 		this.archivedEvents = new HashMap<>();
 		this.activeRetrieveRequest = new HashSet<>();
+		this.isUnsubscribbed = false;
+		this.unSubscriptionTick = null;
 	}
 	
 	/**
@@ -114,29 +114,30 @@ public class Process {
 	
 	@ScheduledMethod(start=1 , interval=1)
 	public void step() {
-		//extract from the receivedMessages queue the messages which arrive at the current tick
-		for(Message message : this.receivedMessages) {
-			if(message.tick <= this.getCurrentTick()) {
-				switch(message.type) {
-					case GOSSIP:
-						this.gossipHandler((Gossip)message);
-						break;
-					case RETRIEVE_REQUEST:
-						this.retrieveRequestHandler((RetrieveRequest)message);
-						break;
-					case RETRIEVE_REPLY:
-						this.retrieveReplyHandler((RetrieveReply)message);
-						break;
-						
+		// last tick in which step is executed is the tick at which process unsubscribed + 1 
+		if(!isUnsubscribbed | (getCurrentTick() < unSubscriptionTick + 2)) {
+			//extract from the receivedMessages queue the messages which arrive at the current tick
+			for(Message message : this.receivedMessages) {
+				if(message.tick <= this.getCurrentTick()) {
+					switch(message.type) {
+						case GOSSIP:
+							this.gossipHandler((Gossip)message);
+							break;
+						case RETRIEVE_REQUEST:
+							this.retrieveRequestHandler((RetrieveRequest)message);
+							break;
+						case RETRIEVE_REPLY:
+							this.retrieveReplyHandler((RetrieveReply)message);
+							break;
+							
+					}
+					this.receivedMessages.remove(message);
 				}
-				this.receivedMessages.remove(message);
 			}
+			
+			//Check missing events
+			this.retrieveMissingMessages();
 		}
-		
-		
-	
-		//Check missing events
-		this.retrieveMissingMessages();
 	}
 	
 	public void gossipHandler(Gossip gossipMessage) {
@@ -344,6 +345,8 @@ public class Process {
 			// if the map previously contained a mapping for the key, the old value is replaced
 			archivedEvents.put(oldestEvent, getCurrentTick());
 		}
+		
+		this.trimArchivedEvents();
 	}
 	
 	public void trimArchivedEvents() {
@@ -415,7 +418,13 @@ public class Process {
 		}
 		
 		gossipSubs = (HashSet<Integer>) subs.keySet();
-		gossipSubs.add(processId);
+		// add processId to subs only if the process has not unsubscribed and the current tick is above or equal to the unsubscription tick
+		// add processId to subs only if the process has not unsubscribed and this happened in the same tick
+		if(!isUnsubscribbed | getCurrentTick() < unSubscriptionTick + 1) {
+			gossipSubs.add(processId);
+		} else {
+			unSubs.put(processId, getCurrentTick());
+		}
 		
 		gossipUnSubs = (HashSet<Integer>) unSubs.keySet();
 		
@@ -498,6 +507,15 @@ public class Process {
 		// Add event to events buffer and the relative id inside eventIds
 		this.events.add(newEvent);
 		this.eventIds.add(newEvent.eventId);
+		
+	}
+	
+	public void unsubscribe() {
+		isUnsubscribbed = true;
+		unSubscriptionTick = getCurrentTick();
+	}
+	
+	public void subscribe() {
 		
 	}
 }
