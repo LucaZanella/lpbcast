@@ -137,6 +137,9 @@ public class Process {
 			
 			//Check missing events
 			this.retrieveMissingMessages();
+			
+			//Gossip
+			this.gossip();
 		}
 	}
 	
@@ -446,7 +449,9 @@ public class Process {
 		Object[] bufferKeys = view.keySet().toArray();
 		HashSet<Integer> gossipTargets = new HashSet<>();
 		
-		while(gossipTargets.size() < F) {
+		// if view size is smaller than fanout, number of target processes is less then fanout
+		int numTarget = view.size() >= F ? F : view.size();
+		while(gossipTargets.size() < numTarget) {
 			int target = (Integer) bufferKeys[RandomHelper.nextIntFromTo(0, bufferKeys.length)];
 			// adds target only if it is not already contained
 			gossipTargets.add(target);
