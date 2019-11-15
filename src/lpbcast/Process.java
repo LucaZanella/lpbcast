@@ -333,12 +333,18 @@ public class Process {
 		// remove elements from events buffer that were received a long time ago wrt
 		// to more recent messages from the same broadcast source
 		if(events.size() > EVENTS_MAX_SIZE) {
+			List<Event> eventsToRemove = new LinkedList<>();
+			Iterator<Event> it = events.iterator();
+		    while(it.hasNext()) {
+		      Event currentEvent = it.next();
+		      List<Event> filtered = events.stream()
+		          .filter(e -> e.eventId.origin == currentEvent.eventId.origin && (currentEvent.age - e.age) > LONG_AGO)
+		          .collect(Collectors.toList());
+		      eventsToRemove.addAll(filtered);
+		    }		    
+		    events.removeAll(eventsToRemove);
 			
-			
-			/*
-			 * CONCURREENT ACCESS EXEPTION TODO FIX
-			 */
-			
+		    /*
 			Iterator<Event> it1 = events.iterator();
 			while(it1.hasNext()) {
 				Event e1 = it1.next();
@@ -355,10 +361,9 @@ public class Process {
 					}
 				}
 			}
+			*/
 		}
-		
-		
-		
+
 		// remove elements from events buffer with the largest age
 		while(events.size() > EVENTS_MAX_SIZE) {
 			Event oldestEvent = null;
