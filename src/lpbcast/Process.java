@@ -35,8 +35,8 @@ public class Process {
 	public HashSet<MissingEvent> retrieve;
 	public HashMap<Event, Double> archivedEvents; //processId, tick in which element was added to buffer
 	public HashSet<ActiveRetrieveRequest> activeRetrieveRequest;
-	public boolean isUnsubscribbed;
-	public Double unSubscriptionTick; 
+	public boolean isUnsubscribed;
+	public boolean unsubscriptionRequested; 
 	
 	public static final int EVENTS_MAX_SIZE = 42; // Just for debugging purposes
 	public static final int UNSUBS_MAX_SIZE = 42; // Just for debugging purposes
@@ -64,8 +64,8 @@ public class Process {
 		this.retrieve = new HashSet<>();
 		this.archivedEvents = new HashMap<>();
 		this.activeRetrieveRequest = new HashSet<>();
-		this.isUnsubscribbed = false;
-		this.unSubscriptionTick = null;
+		this.isUnsubscribed = false;
+		this.unsubscriptionRequested = false;
 	}
 	
 	/**
@@ -114,8 +114,8 @@ public class Process {
 	
 	@ScheduledMethod(start=1 , interval=1)
 	public void step() {
-		// last tick in which step is executed is the tick at which process unsubscribed + 1 
-		if(!isUnsubscribbed | (getCurrentTick() < unSubscriptionTick + 2)) {
+		// check whether process should gossip or do nothing 
+		if(!isUnsubscribed) {
 			//extract from the receivedMessages queue the messages which arrive at the current tick
 			for(Message message : this.receivedMessages) {
 				if(message.tick <= this.getCurrentTick()) {
@@ -420,10 +420,11 @@ public class Process {
 		gossipSubs = (HashSet<Integer>) subs.keySet();
 		// add processId to subs only if the process has not unsubscribed and the current tick is above or equal to the unsubscription tick
 		// add processId to subs only if the process has not unsubscribed and this happened in the same tick
-		if(!isUnsubscribbed | getCurrentTick() < unSubscriptionTick + 1) {
+		if(!unsubscriptionRequested) {
 			gossipSubs.add(processId);
 		} else {
 			unSubs.put(processId, getCurrentTick());
+			isUnsubscribed = true; // unsub entry will be sent, process can be considered as unsubscribed
 		}
 		
 		gossipUnSubs = (HashSet<Integer>) unSubs.keySet();
@@ -511,8 +512,7 @@ public class Process {
 	}
 	
 	public void unsubscribe() {
-		isUnsubscribbed = true;
-		unSubscriptionTick = getCurrentTick();
+		unsubscriptionRequested = true;
 	}
 	
 	public void subscribe() {
