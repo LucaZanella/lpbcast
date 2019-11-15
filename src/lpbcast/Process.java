@@ -418,13 +418,11 @@ public class Process {
 		}
 		
 		gossipSubs = (HashSet<Integer>) subs.keySet();
-		// add processId to subs only if the process has not unsubscribed and the current tick is above or equal to the unsubscription tick
-		// add processId to subs only if the process has not unsubscribed and this happened in the same tick
+		// if the process does not want to unsubscribe than adds itself into the subscription buffer
 		if(!unsubscriptionRequested) {
 			gossipSubs.add(processId);
 		} else {
 			unSubs.put(processId, getCurrentTick());
-			isUnsubscribed = true; // unsub entry will be sent, process can be considered as unsubscribed
 		}
 		
 		gossipUnSubs = (HashSet<Integer>) unSubs.keySet();
@@ -460,6 +458,23 @@ public class Process {
 		}
 		
 		events.clear();
+		
+		// process wants to unsubscribe, clear the buffers and set boolean flag
+		if(unsubscriptionRequested) {
+			view.clear();
+			subs.clear();
+			unSubs.clear();
+			eventIds.clear();
+			archivedEvents.clear();
+			retrieve.clear();
+			activeRetrieveRequest.clear();
+			
+			//clear message queue
+			receivedMessages.clear();
+			
+			isUnsubscribed = true;
+			unsubscriptionRequested = false;
+		}
 	}
 	
 	public void updateActiveRetrieveRequests() {
@@ -515,7 +530,17 @@ public class Process {
 		unsubscriptionRequested = true;
 	}
 	
-	public void subscribe() {
-		
+	/**
+	 * 
+	 * @param targetId ID of the process used as entry point in order to join the network
+	 */
+	public void subscribe(int targetId) {
+		assert isUnsubscribed;
+		// when a process wants to join the network clear message queue containg old message
+		receivedMessages.clear();
+		// insert targetId inside view
+		view.put(targetId, 0);
+		// change subscription status
+		isUnsubscribed = false;
 	}
 }
