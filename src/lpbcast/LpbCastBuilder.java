@@ -34,7 +34,7 @@ public class LpbCastBuilder implements ContextBuilder<Object> {
 				view.put(i + 1, INITIAL_FREQUENCY);
 			}
 			while(view.size() < viewSize) {
-				int targetId = RandomHelper.nextIntFromTo(0, processCount);
+				int targetId = RandomHelper.nextIntFromTo(0, processCount - 1);
 				if(targetId != i) {
 					// the target process is put in the view only if it is not already contained
 					view.putIfAbsent(targetId, INITIAL_FREQUENCY);
