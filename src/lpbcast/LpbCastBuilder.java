@@ -11,6 +11,7 @@ import repast.simphony.dataLoader.ContextBuilder;
 
 /**
  * @author zanel
+ * @author danie
  * @author coffee
  * 
  */

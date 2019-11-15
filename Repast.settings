@@ -3,13 +3,15 @@
   <hashtable>
     <default>
       <loadFactor>0.75</loadFactor>
-      <threshold>8</threshold>
+      <threshold>3</threshold>
     </default>
-    <int>11</int>
-    <int>2</int>
+    <int>5</int>
+    <int>3</int>
+    <string>SettingsFileName</string>
+    <string>Repast.settings</string>
     <string>SettingsRegistryId</string>
     <string>Repast.registry</string>
     <string>LastLoadedScenario</string>
-    <string>C:\Users\zanel\Desktop\Luca\Università\Magistrale\2 Anno\1 Semestre\Distributed Systems 2\Assignments\Assignment1\lpbcast\lpbcast.rs</string>
+    <string>C:\Users\danie\repast-workspace\lpbcast\lpbcast.rs</string>
   </hashtable>
 </simphony.settings.SettingsRegistry>

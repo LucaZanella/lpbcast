@@ -7,8 +7,10 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.LinkedList;
+import java.util.List;
 import java.util.Map;
 import java.util.UUID;
+import java.util.stream.Collectors;
 
 import lpbcast.ActiveRetrieveRequest.Destination;
 import repast.simphony.context.Context;
@@ -38,20 +40,20 @@ public class Process {
 	public boolean isUnsubscribed;
 	public boolean unsubscriptionRequested; 
 	
-	public static final int EVENTS_MAX_SIZE = 42; // Just for debugging purposes
-	public static final int UNSUBS_MAX_SIZE = 42; // Just for debugging purposes
-	public static final int EVENTIDS_MAX_SIZE = 42;
-	public static final int VIEW_MAX_SIZE = 42; // Just for debugging purposes
-	public static final int SUBS_MAX_SIZE = 42; // Just for debugging purposes
-	public static final int ARCHIVED_MAX_SIZE = 42; // Just for debugging purposes
+	public static final int EVENTS_MAX_SIZE = 5; // Just for debugging purposes
+	public static final int UNSUBS_MAX_SIZE = 5; // Just for debugging purposes
+	public static final int EVENTIDS_MAX_SIZE = 5;
+	public static final int VIEW_MAX_SIZE = 5; // Just for debugging purposes
+	public static final int SUBS_MAX_SIZE = 5; // Just for debugging purposes
+	public static final int ARCHIVED_MAX_SIZE = 10; // Just for debugging purposes
 	public static final int UNSUBS_VALIDITY = 100; // elements in the unSubs buffer are expire after this amount of tick has passed
-	public static final int LONG_AGO = 42; // Just for debugging purposes
+	public static final int LONG_AGO = 100; // Just for debugging purposes
 	public static final double K = 0.5; // Just for debugging purposes
 	public static final int MESSAGE_MAX_DELAY = 1; // a message takes at most this amount of ticks to reach destination
 	public static final boolean SYNC = true; // if set to false, message could have delays
 	public static final int F = 3; // Just for debugging purposes
-	public static final int RECOVERY_TIMEOUT = 10; //Retransmission timeout to different destinations
-	public static final int K_RECOVERY = 10; // Enough tick passed eventId is eligible for recovery
+	public static final int RECOVERY_TIMEOUT = 20; // Retransmission timeout to different destinations
+	public static final int K_RECOVERY = 20; // Enough tick passed eventId is eligible for recovery
 	
 	public Process(int processId, HashMap<Integer, Integer> view) {
 		this.processId = processId;
@@ -114,10 +116,27 @@ public class Process {
 	
 	@ScheduledMethod(start=1 , interval=1)
 	public void step() {
+		/*
+		 * REMOVE THIS SECTION, USED ONLY FOR DEBUGGIN PURPOSES
+		 */
+
+		double REMOVEME = getCurrentTick();
+		double REMOVEME2 = this.processId;
+		
+		if(RandomHelper.nextDouble() < 0.001) {
+			this.lpbCast();
+		}
+		
+		/*
+		 * END OF SECTION
+		 */
+		
 		// check whether process should gossip or do nothing 
 		if(!isUnsubscribed) {
 			//extract from the receivedMessages queue the messages which arrive at the current tick
-			for(Message message : this.receivedMessages) {
+			Iterator<Message> it = this.receivedMessages.iterator();
+			while(it.hasNext()) {
+				Message message = it.next();
 				if(message.tick <= this.getCurrentTick()) {
 					switch(message.type) {
 						case GOSSIP:
@@ -131,7 +150,7 @@ public class Process {
 							break;
 							
 					}
-					this.receivedMessages.remove(message);
+					it.remove();
 				}
 			}
 			
@@ -258,7 +277,7 @@ public class Process {
 			// second trim is done by sampling random element
 			// get a random key from the buffer HashMap
 			Object[] bufferKeys = unSubs.keySet().toArray();
-			int key = (Integer) bufferKeys[RandomHelper.nextIntFromTo(0, bufferKeys.length)];
+			int key = (Integer) bufferKeys[RandomHelper.nextIntFromTo(0, bufferKeys.length - 1)];
 			unSubs.remove(key);
 		}
 	}
@@ -295,7 +314,7 @@ public class Process {
 		while(!found) {
 			// get a random key from the buffer HashMap
 			Object[] bufferKeys = buffer.keySet().toArray();
-			target = (Integer) bufferKeys[RandomHelper.nextIntFromTo(0, bufferKeys.length)];
+			target = (Integer) bufferKeys[RandomHelper.nextIntFromTo(0, bufferKeys.length - 1)];
 			Integer currentFrequency = buffer.get(target);
 			
 			if(currentFrequency > K * averageFrequency) {
@@ -314,19 +333,31 @@ public class Process {
 		// remove elements from events buffer that were received a long time ago wrt
 		// to more recent messages from the same broadcast source
 		if(events.size() > EVENTS_MAX_SIZE) {
-			for(Event e1 : events) {
-				for(Event e2 : events) {
+			
+			
+			/*
+			 * CONCURREENT ACCESS EXEPTION TODO FIX
+			 */
+			
+			Iterator<Event> it1 = events.iterator();
+			while(it1.hasNext()) {
+				Event e1 = it1.next();
+				Iterator<Event> it2 = events.iterator();
+				while(it2.hasNext()) {
+					Event e2 = it2.next();
 					// the message is received a long time ago wrt more recent messages
 					// from the same broadcast source 
 					// this implementation removes elements in following positions
 					if((e1.eventId.origin == e2.eventId.origin) & ((e2.age - e1.age) > LONG_AGO)) {
-						events.remove(e2);
+						it2.remove();
 						// if the map previously contained a mapping for the key, the old value is replaced
 						archivedEvents.put(e2, getCurrentTick());
 					}
 				}
 			}
 		}
+		
+		
 		
 		// remove elements from events buffer with the largest age
 		while(events.size() > EVENTS_MAX_SIZE) {
@@ -420,7 +451,7 @@ public class Process {
 			e.age += 1;
 		}
 		
-		gossipSubs = (HashSet<Integer>) subs.keySet();
+		gossipSubs = new HashSet<Integer>(subs.keySet());
 		// if the process does not want to unsubscribe than adds itself into the subscription buffer
 		if(!unsubscriptionRequested) {
 			gossipSubs.add(processId);
@@ -428,7 +459,7 @@ public class Process {
 			unSubs.put(processId, getCurrentTick());
 		}
 		
-		gossipUnSubs = (HashSet<Integer>) unSubs.keySet();
+		gossipUnSubs = new HashSet<Integer>(unSubs.keySet());
 		
 		gossipEvents = new HashSet<Event>();
 		for(Event e : events) {
@@ -452,7 +483,7 @@ public class Process {
 		// if view size is smaller than fanout, number of target processes is less then fanout
 		int numTarget = view.size() >= F ? F : view.size();
 		while(gossipTargets.size() < numTarget) {
-			int target = (Integer) bufferKeys[RandomHelper.nextIntFromTo(0, bufferKeys.length)];
+			int target = (Integer) bufferKeys[RandomHelper.nextIntFromTo(0, bufferKeys.length - 1)];
 			// adds target only if it is not already contained
 			gossipTargets.add(target);
 		}
@@ -462,7 +493,13 @@ public class Process {
 			currentTarget.receive(gossip);
 		}
 		
-		events.clear();
+		// clear buffer events and store them in archivedEvents
+		Iterator<Event> it = events.iterator();
+		while(it.hasNext()) {
+			Event e = it.next();
+			it.remove();	// removes event from event
+			archivedEvents.put(e, this.getCurrentTick());
+		}
 		
 		// process wants to unsubscribe, clear the buffers and set boolean flag
 		if(unsubscriptionRequested) {
@@ -492,7 +529,7 @@ public class Process {
 						RetrieveRequest randMessage = new RetrieveRequest(this.processId, ar.eventId);
 						// get a random processId from the view
 						Object[] viewKeys = view.keySet().toArray();
-						int target = (Integer) viewKeys[RandomHelper.nextIntFromTo(0, viewKeys.length)];
+						int target = (Integer) viewKeys[RandomHelper.nextIntFromTo(0, viewKeys.length - 1)];
 						// send message to a random process in the view
 						getProcessById(target).receive(randMessage);
 						// update the active request
