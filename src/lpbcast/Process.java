@@ -40,6 +40,10 @@ public class Process {
 	public HashSet<ActiveRetrieveRequest> activeRetrieveRequest;
 	public boolean isUnsubscribed;
 	public boolean unsubscriptionRequested; 
+	public Visualization visual;
+	public boolean deliveredCurrentVisualEvent;
+	public Event currentVisualEvent;
+	
 	
 	public static final int EVENTS_MAX_SIZE = 5; // Just for debugging purposes
 	public static final int UNSUBS_MAX_SIZE = 5; // Just for debugging purposes
@@ -56,7 +60,7 @@ public class Process {
 	public static final int RECOVERY_TIMEOUT = 20; // Retransmission timeout to different destinations
 	public static final int K_RECOVERY = 20; // Enough tick passed eventId is eligible for recovery
 	
-	public Process(int processId, HashMap<Integer, Integer> view) {
+	public Process(int processId, HashMap<Integer, Integer> view, Visualization visual) {
 		this.processId = processId;
 		this.view = view;
 		this.receivedMessages = new ConcurrentLinkedQueue<>();
@@ -69,6 +73,9 @@ public class Process {
 		this.activeRetrieveRequest = new HashSet<>();
 		this.isUnsubscribed = false;
 		this.unsubscriptionRequested = false;
+		this.visual = visual;
+		this.currentVisualEvent = null;
+		this.deliveredCurrentVisualEvent = false;
 	}
 	
 	/**
@@ -114,7 +121,7 @@ public class Process {
 		receivedMessages.add(message);
 	}
 	
-	@ScheduledMethod(start=1 , interval=1)
+	@ScheduledMethod(start=2 , interval=2)
 	public void step() {	
 		// check whether process should gossip or do nothing 
 		if(!isUnsubscribed) {
@@ -140,6 +147,12 @@ public class Process {
 			
 			//Check missing events
 			this.retrieveMissingMessages();
+			
+			// START DEBUGGING
+	        if(RandomHelper.nextDouble() < 0.01) {
+	        	lpbCast();
+	        }
+	        //END DEBUGGING
 			
 			//Gossip
 			this.gossip();
@@ -365,6 +378,9 @@ public class Process {
 			events.add(newEvent);
 			lpbDelivery(newEvent);
 			eventIds.add(newEvent.eventId);
+			if(newEvent.eventId.id.equals(visual.currentVisEvent.eventId.id)) {
+				this.deliveredCurrentVisualEvent = true;
+			} 
 		}
 		
 		for(Event event : events) {
@@ -395,6 +411,10 @@ public class Process {
 					// Create and add a new ActiveRequest
 					ActiveRetrieveRequest ar = new ActiveRetrieveRequest(me.eventId, this.getCurrentTick(), Destination.SENDER);
 					this.activeRetrieveRequest.add(ar);
+					//Visualize retrieve link
+					if(me.eventId.id.equals(visual.currentVisEvent.eventId.id)) {
+						this.visual.addLink(this, getProcessById(me.sender), Visualization.EdgeType.RETRIEVE);
+					}
 				}
 				// In any case, remove the message from the retrieve queue (either received or request sent)
 				it.remove();
@@ -454,6 +474,24 @@ public class Process {
 			currentTarget.receive(gossip);
 		}
 		
+		//Check if inside the gossip event is present the current event of the visualization
+		boolean containsVisEvent = false;
+		for(Event e : gossipEvents) {
+			if(visual.currentVisEvent != null && e.eventId.id.equals(visual.currentVisEvent.eventId.id)){
+				containsVisEvent = true;
+			}
+		}
+		if(containsVisEvent) {
+			for(Map.Entry<Integer, Integer> entry : this.view.entrySet()) {
+				//for each process in the view, check if it is present also in the fanout
+				if(gossipTargets.contains(entry.getKey())) {
+					visual.addLink(this, this.getProcessById(entry.getKey()), Visualization.EdgeType.FANOUT);
+				} else {
+					visual.addLink(this, this.getProcessById(entry.getKey()), Visualization.EdgeType.VIEW);
+				}
+			}
+		}
+
 		// clear buffer events and store them in archivedEvents
 		Iterator<Event> it = events.iterator();
 		while(it.hasNext()) {
@@ -496,6 +534,10 @@ public class Process {
 						// update the active request
 						ar.tick = this.getCurrentTick();
 						ar.destination = Destination.RANDOM;
+						// Visualize the retrieve edge
+						if(ar.eventId.id.equals(visual.currentVisEvent.eventId.id)) {
+							this.visual.addLink(this, getProcessById(target), Visualization.EdgeType.RETRIEVE);
+						}
 						break;
 					case RANDOM:
 						RetrieveRequest origMessage = new RetrieveRequest(this.processId, ar.eventId);
@@ -504,6 +546,10 @@ public class Process {
 						// update the active request
 						ar.tick = this.getCurrentTick();
 						ar.destination = Destination.ORIGINATOR;
+						// Visualize the retrieve edge
+						if(ar.eventId.id.equals(visual.currentVisEvent.eventId.id)) {
+							this.visual.addLink(this, getProcessById(ar.eventId.origin), Visualization.EdgeType.RETRIEVE);
+						}
 						break;
 					case ORIGINATOR:
 						// the retrieve message is lost
@@ -526,6 +572,8 @@ public class Process {
 		// Add event to events buffer and the relative id inside eventIds
 		this.events.add(newEvent);
 		this.eventIds.add(newEvent.eventId);
+		// Notify to the Visualization that a new event is lpbcasted
+		visual.notifyNewEvent(newEvent);
 		
 	}
 	
@@ -545,5 +593,24 @@ public class Process {
 		view.put(targetId, 0);
 		// change subscription status
 		isUnsubscribed = false;
+	}
+	
+	
+	public void setCurrentVisualEvent(Event currentVisualEvent) {
+		this.currentVisualEvent = currentVisualEvent;
+		if(currentVisualEvent.eventId.origin == this.processId) {
+			// if the current process generated the event, it has already delivered it
+			this.deliveredCurrentVisualEvent = true;
+		} else {
+			// reset deliverCurrentVisualEvent with the new Event to consider in the visualization
+			this.deliveredCurrentVisualEvent = false;
+		}
+	}
+	public double deliveredCurrentVisualEvent() {
+		if(deliveredCurrentVisualEvent) {
+			return 1;
+		} else {
+			return 0;
+		}
 	}
 }
