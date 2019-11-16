@@ -262,6 +262,7 @@ public class Process {
 			// second trim is done by sampling random element
 			// get a random key from the buffer HashMap
 			Object[] bufferKeys = unSubs.keySet().toArray();
+			assert bufferKeys.length > 0;
 			int key = (Integer) bufferKeys[RandomHelper.nextIntFromTo(0, bufferKeys.length - 1)];
 			unSubs.remove(key);
 		}
@@ -290,6 +291,7 @@ public class Process {
 		while(!found) {
 			// get a random key from the buffer HashMap
 			Object[] bufferKeys = buffer.keySet().toArray();
+			assert bufferKeys.length > 0;
 			target = (Integer) bufferKeys[RandomHelper.nextIntFromTo(0, bufferKeys.length - 1)];
 			Integer currentFrequency = buffer.get(target);
 			
@@ -445,6 +447,7 @@ public class Process {
 		// if view size is smaller than fanout, number of target processes is less then fanout
 		int numTarget = view.size() >= F ? F : view.size();
 		while(gossipTargets.size() < numTarget) {
+			assert bufferKeys.length > 0;
 			int target = (Integer) bufferKeys[RandomHelper.nextIntFromTo(0, bufferKeys.length - 1)];
 			// adds target only if it is not already contained
 			gossipTargets.add(target);
@@ -491,6 +494,7 @@ public class Process {
 						RetrieveRequest randMessage = new RetrieveRequest(this.processId, ar.eventId);
 						// get a random processId from the view
 						Object[] viewKeys = view.keySet().toArray();
+						assert viewKeys.length > 0;
 						int target = (Integer) viewKeys[RandomHelper.nextIntFromTo(0, viewKeys.length - 1)];
 						// send message to a random process in the view
 						getProcessById(target).receive(randMessage);
