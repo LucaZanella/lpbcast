@@ -64,6 +64,7 @@ public class Process {
 	public static final int F = 3; // Just for debugging purposes
 	public static final int RECOVERY_TIMEOUT = 20; // Retransmission timeout to different destinations
 	public static final int K_RECOVERY = 20; // Enough tick passed eventId is eligible for recovery
+	public static final int PROCESS_COUNT = 10; 
 	
 	public Process(int processId, HashMap<Integer, Integer> view) {
 		this.processId = processId;
@@ -123,8 +124,8 @@ public class Process {
 		receivedMessages.add(message);
 		
 		// START DEBUGGING
-		LOGGER.setLevel(Level.INFO);
-		LOGGER.info("Process: " + processId + " has received Message: " + message.type + " from Process: " + message.sender);
+		//LOGGER.setLevel(Level.INFO);
+		//LOGGER.info("Process: " + processId + " has received Message: " + message.type + " from Process: " + message.sender);
 		//END DEBUGGING
 	}
 	
@@ -132,10 +133,12 @@ public class Process {
 	public void step() {	
 		// check whether process should gossip or do nothing 
 		if(!isUnsubscribed) {
-			
 			// START DEBUGGING
 		    if(RandomHelper.nextDouble() < 0.001) {
 		    	lpbCast();
+		    }
+		    if(RandomHelper.nextDouble() < 0.001) {
+		    	unsubscribe();
 		    }
 		    //END DEBUGGING
 			
@@ -164,6 +167,17 @@ public class Process {
 			
 			//Gossip
 			this.gossip();
+		} else {
+			// START DEBUGGING
+		    if(RandomHelper.nextDouble() < 0.001) {
+		    	Process target = getProcessById(RandomHelper.nextIntFromTo(0, PROCESS_COUNT - 1));
+		    	while(target.processId == processId) {
+		    		target = getProcessById(RandomHelper.nextIntFromTo(0, PROCESS_COUNT - 1));
+		    	}
+		    	
+		    	subscribe(target.processId);
+		    }
+		    // END DEBUGGING
 		}
 	}
 	
