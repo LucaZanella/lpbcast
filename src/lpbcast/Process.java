@@ -109,14 +109,13 @@ public class Process {
 		} else {
 			//The message is received at the next tick + a random delay
 			message.tick = getCurrentTick() + RandomHelper.nextIntFromTo((int)nextTick, MESSAGE_MAX_DELAY);
-
 		}
 
 		receivedMessages.add(message);
 	}
 	
 	@ScheduledMethod(start=1 , interval=1)
-	public void step() {		
+	public void step() {	
 		// check whether process should gossip or do nothing 
 		if(!isUnsubscribed) {
 			//extract from the receivedMessages queue the messages which arrive at the current tick
@@ -134,7 +133,6 @@ public class Process {
 						case RETRIEVE_REPLY:
 							this.retrieveReplyHandler((RetrieveReply)message);
 							break;
-							
 					}
 					it.remove();
 				}

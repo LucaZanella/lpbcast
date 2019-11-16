@@ -14,14 +14,17 @@ public abstract class Message {
 	
 	public double tick;
 	public MessageType type;
+	public int sender;
 	
-	public Message(double tick, MessageType type) {
+	public Message(double tick, MessageType type, int sender) {
 		this.tick = tick;
 		this.type = type;
+		this.sender = sender;
 	}
 	
-	public Message(MessageType type) {
+	public Message(MessageType type, int sender) {
 		this.tick = -1; // -1 means that the tick will be set during the sending of the message
 		this.type = type;
+		this.sender = sender;
 	}
 }

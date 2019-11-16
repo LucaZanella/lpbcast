@@ -10,12 +10,10 @@ package lpbcast;
  */
 public class RetrieveRequest extends Message {
 
-	public int sender;
 	public EventId eventId;
 	
 	public RetrieveRequest(int sender, EventId eventId) {
-		super(Message.MessageType.RETRIEVE_REQUEST);
-		this.sender = sender;
+		super(Message.MessageType.RETRIEVE_REQUEST, sender);
 		this.eventId = eventId;
 	}
 }
