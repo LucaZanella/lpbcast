@@ -10,6 +10,7 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
+import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.stream.Collectors;
 
 import lpbcast.ActiveRetrieveRequest.Destination;
@@ -29,7 +30,7 @@ public class Process {
 	
 	public int processId;
 	public HashMap<Integer, Integer> view;
-	public LinkedList<Message> receivedMessages;
+	public ConcurrentLinkedQueue<Message> receivedMessages;
 	public HashSet<Event> events;
 	public LinkedList<EventId> eventIds;
 	public HashMap<Integer, Integer> subs;
@@ -58,7 +59,7 @@ public class Process {
 	public Process(int processId, HashMap<Integer, Integer> view) {
 		this.processId = processId;
 		this.view = view;
-		this.receivedMessages = new LinkedList<>();
+		this.receivedMessages = new ConcurrentLinkedQueue<>();
 		this.events = new HashSet<>();
 		this.eventIds = new LinkedList<>();
 		this.subs = new HashMap<>();
@@ -86,12 +87,12 @@ public class Process {
 	public Process getProcessById(int processId) {
 		// retrieves the context of the current process
 		Process target = null;
-		Context<Object> context = ContextUtils.getContext(this);
-		IndexedIterable<Object> collection =  context.getObjects(Process.class);
-		Iterator<Object> iterator = collection.iterator();
+		Context<Process> context = ContextUtils.getContext(this);
+		IndexedIterable<Process> collection =  context.getObjects(Process.class);
+		Iterator<Process> iterator = collection.iterator();
 		
 		while(iterator.hasNext() & target == null) {
-			Process process = (Process) iterator.next();
+			Process process = iterator.next();
 			if(process.processId == processId) {
 				target = process;
 			}
@@ -115,22 +116,7 @@ public class Process {
 	}
 	
 	@ScheduledMethod(start=1 , interval=1)
-	public void step() {
-		/*
-		 * REMOVE THIS SECTION, USED ONLY FOR DEBUGGIN PURPOSES
-		 */
-
-		double REMOVEME = getCurrentTick();
-		double REMOVEME2 = this.processId;
-		
-		if(RandomHelper.nextDouble() < 0.001) {
-			this.lpbCast();
-		}
-		
-		/*
-		 * END OF SECTION
-		 */
-		
+	public void step() {		
 		// check whether process should gossip or do nothing 
 		if(!isUnsubscribed) {
 			//extract from the receivedMessages queue the messages which arrive at the current tick
@@ -302,15 +288,6 @@ public class Process {
 		Double averageFrequency = buffer.values().stream().mapToInt(i -> i).average().orElse(0.0);
 		Integer target = null;
 		
-		/* Another method to calculate the average if the above method does not work
-		Double average, count, sum = 0.0;
-		for(Integer freq : buffer.values()) {
-			sum += freq;
-			count += 1;
-		}
-		average = sum/count;
-		*/
-		
 		while(!found) {
 			// get a random key from the buffer HashMap
 			Object[] bufferKeys = buffer.keySet().toArray();
@@ -333,7 +310,7 @@ public class Process {
 		// remove elements from events buffer that were received a long time ago wrt
 		// to more recent messages from the same broadcast source
 		if(events.size() > EVENTS_MAX_SIZE) {
-			List<Event> eventsToRemove = new LinkedList<>();
+			HashSet<Event> eventsToRemove = new HashSet<>();
 			Iterator<Event> it = events.iterator();
 		    while(it.hasNext()) {
 		      Event currentEvent = it.next();
@@ -343,25 +320,6 @@ public class Process {
 		      eventsToRemove.addAll(filtered);
 		    }		    
 		    events.removeAll(eventsToRemove);
-			
-		    /*
-			Iterator<Event> it1 = events.iterator();
-			while(it1.hasNext()) {
-				Event e1 = it1.next();
-				Iterator<Event> it2 = events.iterator();
-				while(it2.hasNext()) {
-					Event e2 = it2.next();
-					// the message is received a long time ago wrt more recent messages
-					// from the same broadcast source 
-					// this implementation removes elements in following positions
-					if((e1.eventId.origin == e2.eventId.origin) & ((e2.age - e1.age) > LONG_AGO)) {
-						it2.remove();
-						// if the map previously contained a mapping for the key, the old value is replaced
-						archivedEvents.put(e2, getCurrentTick());
-					}
-				}
-			}
-			*/
 		}
 
 		// remove elements from events buffer with the largest age
@@ -502,7 +460,7 @@ public class Process {
 		Iterator<Event> it = events.iterator();
 		while(it.hasNext()) {
 			Event e = it.next();
-			it.remove();	// removes event from event
+			it.remove();	// removes event from events
 			archivedEvents.put(e, this.getCurrentTick());
 		}
 		
