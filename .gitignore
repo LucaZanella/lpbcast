@@ -107,5 +107,10 @@ lib/
 license.txt
 model_description.txt
 repast-licenses/
+Repast.settings
 
 # End of https://www.gitignore.io/api/java,eclipse
+
+# Misc
+velocity.log
+velocity.log.1

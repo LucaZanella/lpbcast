@@ -209,6 +209,7 @@ public class Process {
 				}
 			}
 		}
+		trimEventIds();
 		// end of method updateEventIds 
 	}
 	
