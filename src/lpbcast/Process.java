@@ -3,6 +3,12 @@
  */
 package lpbcast;
 
+import java.io.IOException;
+import java.util.logging.Level;
+import java.util.logging.Logger;
+
+import lpbcast.logger.MyLogger;
+
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
@@ -28,6 +34,9 @@ import repast.simphony.util.collections.IndexedIterable;
  */
 public class Process {
 	
+	// use the classname for the logger, this way you can refactor
+    private final static Logger LOGGER = Logger.getLogger(Logger.GLOBAL_LOGGER_NAME);
+    
 	public int processId;
 	public HashMap<Integer, Integer> view;
 	public ConcurrentLinkedQueue<Message> receivedMessages;
@@ -112,12 +121,24 @@ public class Process {
 		}
 
 		receivedMessages.add(message);
+		
+		// START DEBUGGING
+		LOGGER.setLevel(Level.INFO);
+		LOGGER.info("Process: " + processId + " has received Message: " + message.type + " from Process: " + message.sender);
+		//END DEBUGGING
 	}
 	
 	@ScheduledMethod(start=1 , interval=1)
 	public void step() {	
 		// check whether process should gossip or do nothing 
 		if(!isUnsubscribed) {
+			
+			// START DEBUGGING
+		    if(RandomHelper.nextDouble() < 0.001) {
+		    	lpbCast();
+		    }
+		    //END DEBUGGING
+			
 			//extract from the receivedMessages queue the messages which arrive at the current tick
 			Iterator<Message> it = this.receivedMessages.iterator();
 			while(it.hasNext()) {
@@ -206,6 +227,11 @@ public class Process {
 				
 				if(!duplicateFound) {
 					retrieve.add(missingEvent);
+					
+					// START DEBUGGING
+					LOGGER.setLevel(Level.INFO);
+					LOGGER.info("Process: " + processId + " has lost Message: " + eventId.id + " from Gossip sender: " + gossipMessage.sender);
+					//END DEBUGGING
 				}
 			}
 		}
@@ -477,6 +503,11 @@ public class Process {
 			
 			isUnsubscribed = true;
 			unsubscriptionRequested = false;
+			
+			// START DEBUGGING
+			LOGGER.setLevel(Level.INFO);
+			LOGGER.info("Process: " + processId + " has unsubscribed");
+			//END DEBUGGING
 		}
 	}
 	
@@ -545,5 +576,10 @@ public class Process {
 		view.put(targetId, 0);
 		// change subscription status
 		isUnsubscribed = false;
+		
+		// START DEBUGGING
+		LOGGER.setLevel(Level.INFO);
+		LOGGER.info("Process: " + processId + " has subscribed");
+		//END DEBUGGING
 	}
 }

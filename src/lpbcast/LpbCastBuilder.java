@@ -3,6 +3,12 @@
  */
 package lpbcast;
 
+import java.io.IOException;
+import java.util.logging.Level;
+import java.util.logging.Logger;
+
+import lpbcast.logger.MyLogger;
+
 import java.util.HashMap;
 import repast.simphony.random.RandomHelper;
 
@@ -21,6 +27,13 @@ public class LpbCastBuilder implements ContextBuilder<Object> {
 
 	@Override
 	public Context build(Context<Object> context) {
+		try {
+            MyLogger.setup();
+        } catch (IOException e) {
+            e.printStackTrace();
+            throw new RuntimeException("Problems with creating the log files");
+        }
+		
 		context.setId("lpbcast");
 		
 		int processCount = 10;
