@@ -10,6 +10,8 @@ import repast.simphony.context.Context;
 import repast.simphony.dataLoader.ContextBuilder;
 
 /**
+ * Represents the context builder of the application.
+ * 
  * @author zanel
  * @author danie
  * @author coffee

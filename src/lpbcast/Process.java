@@ -22,23 +22,73 @@ import repast.simphony.util.ContextUtils;
 import repast.simphony.util.collections.IndexedIterable;
 
 /**
+ * Represents a Process.
+ * 
  * @author zanel
  * @author danie
  * @author coffee
  */
 public class Process {
 	
+	/**
+	 * The identifier of the process.
+	 */
 	public int processId;
+	/**
+	 * The subset of processes known by the current process. 
+	 * Every process identifier is associated to its frequency.
+	 */
 	public HashMap<Integer, Integer> view;
+	/**
+	 * The buffer storing the incoming messages.
+	 */
 	public ConcurrentLinkedQueue<Message> receivedMessages;
+	/**
+	 * The buffer storing the event notifications received since the
+	 * last outgoing gossip message.
+	 */
 	public HashSet<Event> events;
+	/**
+	 * The buffer storing the identifiers of the event notifications 
+	 * the process has already delivered.
+	 */
 	public LinkedList<EventId> eventIds;
+	/**
+	 * The buffer storing the subscriptions. 
+	 * Every process identifier is associated to its frequency.
+	 */
 	public HashMap<Integer, Integer> subs;
-	public HashMap<Integer, Double> unSubs; //processId, tick in which element was added to buffer
+	/**
+	 * The buffer storing the unsubscriptions.
+	 * Every process identifier is associated to the tick in which the 
+	 * unsubscription was added to the buffer.
+	 */
+	public HashMap<Integer, Double> unSubs;
+	/**
+	 * The buffer storing the event notifications that have been lost
+	 * and have not been already requested.
+	 */
 	public HashSet<MissingEvent> retrieve;
-	public HashMap<Event, Double> archivedEvents; //processId, tick in which element was added to buffer
+	/**
+	 * The buffer storing the old event notifications. It is used to satisfy
+	 * retransmission requests.
+	 * Every event notification is associated to the tick in which the
+	 * event was added to the buffer.
+	 */
+	public HashMap<Event, Double> archivedEvents;
+	/**
+	 * The buffer storing the event notifications that have been lost
+	 * and have been requested.
+	 */
 	public HashSet<ActiveRetrieveRequest> activeRetrieveRequest;
+	/**
+	 * The boolean denoting the unsubscription of the process.
+	 */
 	public boolean isUnsubscribed;
+	/**
+	 * The boolean denoting the request of the node to unsubscribe
+	 * from the set of processes.
+	 */
 	public boolean unsubscriptionRequested; 
 	
 	public static final int EVENTS_MAX_SIZE = 5; // Just for debugging purposes
@@ -56,6 +106,12 @@ public class Process {
 	public static final int RECOVERY_TIMEOUT = 20; // Retransmission timeout to different destinations
 	public static final int K_RECOVERY = 20; // Enough tick passed eventId is eligible for recovery
 	
+	/**
+	 * Instantiates a new process.
+	 * 
+	 * @param processId the identifier of the process
+	 * @param view the subset of process known by this process
+	 */
 	public Process(int processId, HashMap<Integer, Integer> view) {
 		this.processId = processId;
 		this.view = view;
@@ -72,7 +128,8 @@ public class Process {
 	}
 	
 	/**
-	 * Gets the current tick of the simulation
+	 * Gets the current tick of the simulation.
+	 * 
 	 * @return the current tick
 	 */
 	public double getCurrentTick() {
@@ -80,9 +137,10 @@ public class Process {
 	}
 	
 	/**
-	 * Gets the reference of the process from its id
+	 * Gets the reference of the process from its identifier.
+	 * 
 	 * @param processId the id of the process to be retrieved
-	 * @return The reference to the process with the given id if it exists, null otherwise
+	 * @return the process with the given id if it exists, null otherwise
 	 */
 	public Process getProcessById(int processId) {
 		// retrieves the context of the current process
@@ -101,6 +159,11 @@ public class Process {
 		return target;
 	}
 	
+	/**
+	 * Inserts a message in the queue of incoming messages.
+	 * 
+	 * @param message the message to be sent
+	 */
 	public void receive(Message message) {
 		double nextTick = getCurrentTick() + 1;
 		if(SYNC) {
@@ -114,6 +177,15 @@ public class Process {
 		receivedMessages.add(message);
 	}
 	
+	/**
+	 * Method that runs on each Repast tick and performs the basic logic for each node.
+	 * 
+	 * Each tick, a process follows the following logic: - If we are not unsubscribed,
+	 * get the first message in the incoming queue which can be processed, meaning
+	 * that the tick associated to that message is at least as big as the current tick
+	 * (the message's tick is used to simulate network delays). Depending on the type
+	 * of message, call the appropriate handler.
+	 */
 	@ScheduledMethod(start=1 , interval=1)
 	public void step() {	
 		// check whether process should gossip or do nothing 
@@ -146,6 +218,11 @@ public class Process {
 		}
 	}
 	
+	/**
+	 * Handles a gossip message. 
+	 * 
+	 * @param gossipMessage the gossip message 
+	 */
 	public void gossipHandler(Gossip gossipMessage) {
 		
 		// beginning of method updateUnSubs()
@@ -213,6 +290,12 @@ public class Process {
 		// end of method updateEventIds 
 	}
 	
+	/**
+	 * Handles the request from a process to retrieve a missing event notifications.
+	 * 
+	 * @param retrieveRequestMessage the request to retrieve a missing
+	 * event notification
+	 */
 	public void retrieveRequestHandler(RetrieveRequest retrieveRequestMessage) {
 		EventId id = retrieveRequestMessage.eventId;
 		// 1 -> Check if the event with that id is inside events
@@ -231,6 +314,13 @@ public class Process {
 		}
 	}
 	
+	/**
+	 * Handles the reply from a process containing the missing event notification
+	 * that the current process has requested for.
+	 * 
+	 * @param retrieveReplyMessage the reply containing the missing event 
+	 * notification
+	 */
 	public void retrieveReplyHandler(RetrieveReply retrieveReplyMessage) {
 		Iterator<ActiveRetrieveRequest> it = this.activeRetrieveRequest.iterator();
 		while(it.hasNext()) {
@@ -246,6 +336,9 @@ public class Process {
 		}
 	}
 	
+	/**
+	 * Keeps fixed the size of the unsubscription buffer.
+	 */
 	public void trimUnSubs() {
 		if(unSubs.size() > UNSUBS_MAX_SIZE) {
 			// first trim is done based on expiration date of unsubs
@@ -268,6 +361,9 @@ public class Process {
 		}
 	}
 	
+	/**
+	 * Keeps fixed the size of the view buffer.
+	 */
 	public void trimView() {
 		while(view.size() > VIEW_MAX_SIZE) {
 			int target = selectProcess(view);
@@ -276,6 +372,9 @@ public class Process {
 		}
 	}
 	
+	/**
+	 * Keeps fixed the size of the subscription buffer.
+	 */
 	public void trimSubs() {
 		while(subs.size() > SUBS_MAX_SIZE) {
 			int target = selectProcess(subs);
@@ -283,6 +382,13 @@ public class Process {
 		}
 	}
 	
+	/**
+	 * Selects randomly an element from a buffer based on the average frequency
+	 * of the elements contained in the buffer.
+	 * 
+	 * @param buffer the buffer from which an element is selected
+	 * @return the selected element
+	 */
 	public Integer selectProcess(HashMap<Integer, Integer> buffer) {
 		boolean found = false;		
 		Double averageFrequency = buffer.values().stream().mapToInt(i -> i).average().orElse(0.0);
@@ -306,7 +412,9 @@ public class Process {
 		return target;
 	}
 	
-	
+	/**
+	 * Keeps fixed the size of the events buffer.
+	 */
 	public void trimEvents() {	
 		// remove elements from events buffer that were received a long time ago wrt
 		// to more recent messages from the same broadcast source
@@ -347,6 +455,9 @@ public class Process {
 		this.trimArchivedEvents();
 	}
 	
+	/**
+	 * Keeps fixed the size of the archived events buffer.
+	 */
 	public void trimArchivedEvents() {
 		while(this.archivedEvents.size() > ARCHIVED_MAX_SIZE) {
 			Event minKey = null;
@@ -363,6 +474,12 @@ public class Process {
 		}
 	}
 	
+	/**
+	 * Inserts an event notification and its identifier in the respective buffers,
+	 * if the event has not already been delivered. Then, updates the age of the event.
+	 * 
+	 * @param newEvent the newly received event
+	 */
 	public void processEvent(Event newEvent) {
 		if(!eventIds.contains(newEvent.eventId)) {
 			events.add(newEvent);
@@ -377,12 +494,18 @@ public class Process {
 		}
 	}
 	
+	/**
+	 * Keeps fixed the size of the events' identifiers buffer.
+	 */
 	public void trimEventIds() {
 		while(this.eventIds.size() > EVENTIDS_MAX_SIZE) {
 			eventIds.remove();
 		}
 	}
 	
+	/**
+	 * Starts retrieving missing event notifications.
+	 */
 	public void retrieveMissingMessages() {
 		//Update active request, checking if timeout occurs
 		this.updateActiveRetrieveRequests();
@@ -405,6 +528,9 @@ public class Process {
 		}
 	}
 	
+	/**
+	 * Gossips a fixed number F of processes randomly selected from the view.
+	 */
 	public void gossip() {
 		HashSet<Integer> gossipSubs;
 		HashSet<Integer> gossipUnSubs;
@@ -484,6 +610,9 @@ public class Process {
 		}
 	}
 	
+	/**
+	 * Updates the issued requests to retrieve missing event notifications.
+	 */
 	public void updateActiveRetrieveRequests() {
 		Iterator<ActiveRetrieveRequest> it = activeRetrieveRequest.iterator();
 		while(it.hasNext()) {
@@ -521,10 +650,18 @@ public class Process {
 		}
 	}
 	
+	/**
+	 * Simulates the probabilistic delivery of an event notification.
+	 * 
+	 * @param event the event notification to be delivered
+	 */
 	public void lpbDelivery(Event event) {
 		System.out.println("Deliver event " + event.eventId.id);
 	}
 	
+	/**
+	 * Simulates the probabilistic broadcast of an event notification.
+	 */
 	public void lpbCast() {
 		//Generate a new Event
 		Event newEvent = new Event(new EventId(UUID.randomUUID(), this.processId), 0);
@@ -534,13 +671,18 @@ public class Process {
 		
 	}
 	
+	/**
+	 * Unsubscribes the process from the set of processes.
+	 */
 	public void unsubscribe() {
 		unsubscriptionRequested = true;
 	}
 	
 	/**
+	 * Subscribes the process to a set of process through an entry point.
 	 * 
-	 * @param targetId ID of the process used as entry point in order to join the network
+	 * @param targetId the identifier of the process used as entry point 
+	 * in order to join the network
 	 */
 	public void subscribe(int targetId) {
 		assert isUnsubscribed;

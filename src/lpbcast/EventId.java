@@ -6,25 +6,50 @@ package lpbcast;
 import java.util.UUID;
 
 /**
+ * Represents the unique identifier of an event notification.
+ * 
  * @author zanel
  * @author danie
+ * @author coffee
  *
  */
 public class EventId {
 
+	/**
+	 * The identifier of an event notification
+	 */
 	public UUID id;
+	/**
+	 * The identifier of the process which created this event notification.
+	 */
 	public int origin;
 	
+	/**
+	 * Instantiates a new event notification identifier.
+	 * 
+	 * @param id the identifier of the event notification
+	 * @param origin the identifier of the originator process
+	 */
 	public EventId(UUID id, int origin) {
 		this.id = id;
 		this.origin = origin;
 	}
 	
+	/**
+	 * Instantiates a new event notification identifier.
+	 * 
+	 * @param origin the identifier of the originator process
+	 */
 	public EventId(int origin) {
 		this.id = UUID.randomUUID(); //generate random id for event
 		this.origin = origin;
 	}
 	
+	/**
+	 * Instantiates a new event notification identifier.
+	 * 
+	 * @param eId the identifier of the event notification itself
+	 */
 	public EventId(EventId eId) {
 		this.id = eId.id;
 		this.origin = eId.origin;
@@ -50,8 +75,10 @@ public class EventId {
 	}
 	
 	/**
-	 * Returns a new object which is the exact copy of the event on which the method
-	 * is called
+	 * Returns a new object which is the copy of the event identifier on which 
+	 * the method is called.
+	 * 
+	 * @return the copy of the event identifier
 	 */
 	public EventId clone() {
 		return new EventId(this);
