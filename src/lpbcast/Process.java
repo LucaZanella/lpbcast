@@ -55,6 +55,8 @@ public class Process {
 	public static final int F = 3; // Just for debugging purposes
 	public static final int RECOVERY_TIMEOUT = 20; // Retransmission timeout to different destinations
 	public static final int K_RECOVERY = 20; // Enough tick passed eventId is eligible for recovery
+	public static final boolean AGE_BASED_MESSAGE_PURGING = true; // Enable optimization that removes messages from event buffer based on their dissemination in the system
+	public static final boolean FREQUENCY_BASED_MEMBERSHIP_PURGING = true; // Enable optimization that removes processIds form view and subs based on their dissemination in the system
 	
 	public Process(int processId, HashMap<Integer, Integer> view) {
 		this.processId = processId;
@@ -283,67 +285,87 @@ public class Process {
 		}
 	}
 	
-	public Integer selectProcess(HashMap<Integer, Integer> buffer) {
-		boolean found = false;		
-		Double averageFrequency = buffer.values().stream().mapToInt(i -> i).average().orElse(0.0);
+	public int selectProcess(HashMap<Integer, Integer> buffer) {
 		Integer target = null;
-		
-		while(!found) {
-			// get a random key from the buffer HashMap
+		if(Process.FREQUENCY_BASED_MEMBERSHIP_PURGING) {
+			// optimization enable, use frequencies to decide which element must be removed
+			boolean found = false;		
+			Double averageFrequency = buffer.values().stream().mapToInt(i -> i).average().orElse(0.0);
+			
+			while(!found) {
+				// get a random key from the buffer HashMap
+				Object[] bufferKeys = buffer.keySet().toArray();
+				assert bufferKeys.length > 0;
+				target = (Integer) bufferKeys[RandomHelper.nextIntFromTo(0, bufferKeys.length - 1)];
+				Integer currentFrequency = buffer.get(target);
+				
+				if(currentFrequency > K * averageFrequency) {
+					found = true;
+				} else {
+					// the old value of frequency is replaced with the new one
+					buffer.put(target, currentFrequency + 1);
+				}
+			}
+		} else {
+			// non-optimized version, remove random element from set
 			Object[] bufferKeys = buffer.keySet().toArray();
 			assert bufferKeys.length > 0;
 			target = (Integer) bufferKeys[RandomHelper.nextIntFromTo(0, bufferKeys.length - 1)];
-			Integer currentFrequency = buffer.get(target);
-			
-			if(currentFrequency > K * averageFrequency) {
-				found = true;
-			} else {
-				// the old value of frequency is replaced with the new one
-				buffer.put(target, currentFrequency + 1);
-			}
 		}
 		
+		assert target != null;
 		return target;
 	}
 	
 	
-	public void trimEvents() {	
-		// remove elements from events buffer that were received a long time ago wrt
-		// to more recent messages from the same broadcast source
-		if(events.size() > EVENTS_MAX_SIZE) {
-			HashSet<Event> eventsToRemove = new HashSet<>();
-			Iterator<Event> it = events.iterator();
-		    while(it.hasNext()) {
-		      Event currentEvent = it.next();
-		      List<Event> filtered = events.stream()
-		          .filter(e -> e.eventId.origin == currentEvent.eventId.origin && (currentEvent.age - e.age) > LONG_AGO)
-		          .collect(Collectors.toList());
-		      eventsToRemove.addAll(filtered);
-		    }		    
-		    events.removeAll(eventsToRemove);
-		}
+	public void trimEvents() {
+		if(Process.AGE_BASED_MESSAGE_PURGING) {
+			// remove elements from events buffer that were received a long time ago wrt
+			// to more recent messages from the same broadcast source
+			if(events.size() > EVENTS_MAX_SIZE) {
+				HashSet<Event> eventsToRemove = new HashSet<>();
+				Iterator<Event> it = events.iterator();
+			    while(it.hasNext()) {
+			      Event currentEvent = it.next();
+			      List<Event> filtered = events.stream()
+			          .filter(e -> e.eventId.origin == currentEvent.eventId.origin && (currentEvent.age - e.age) > LONG_AGO)
+			          .collect(Collectors.toList());
+			      eventsToRemove.addAll(filtered);
+			    }		    
+			    events.removeAll(eventsToRemove);
+			}
 
-		// remove elements from events buffer with the largest age
-		while(events.size() > EVENTS_MAX_SIZE) {
-			Event oldestEvent = null;
-			
-			// find the oldest event
-			for(Event e : events) {
-				// first iteration
-				if (oldestEvent == null) {
-					oldestEvent = e;
-				} else {
-					if(e.age > oldestEvent.age) {
+			// remove elements from events buffer with the largest age
+			while(events.size() > EVENTS_MAX_SIZE) {
+				Event oldestEvent = null;
+				
+				// find the oldest event
+				for(Event e : events) {
+					// first iteration
+					if (oldestEvent == null) {
 						oldestEvent = e;
+					} else {
+						if(e.age > oldestEvent.age) {
+							oldestEvent = e;
+						}
 					}
 				}
+				
+				events.remove(oldestEvent);
+				// if the map previously contained a mapping for the key, the old value is replaced
+				archivedEvents.put(oldestEvent, getCurrentTick());
 			}
-			
-			events.remove(oldestEvent);
-			// if the map previously contained a mapping for the key, the old value is replaced
-			archivedEvents.put(oldestEvent, getCurrentTick());
+		} else {
+			// remove elements from event buffer randomly
+			while(events.size() > EVENTS_MAX_SIZE) {
+				int targetIndex = RandomHelper.nextIntFromTo(0, events.size() - 1);
+				Event targetEvent = (Event) events.toArray()[targetIndex];
+				events.remove(targetEvent);
+				archivedEvents.put(targetEvent, this.getCurrentTick());
+			}
 		}
 		
+		// trim archived events buffer
 		this.trimArchivedEvents();
 	}
 	
