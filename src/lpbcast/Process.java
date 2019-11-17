@@ -392,12 +392,22 @@ public class Process {
 			MissingEvent me = it.next();
 			if(this.getCurrentTick() - me.tick > K_RECOVERY) {
 				if(!this.eventIds.contains(me.eventId)) {
-					// Create end send a retrieve message to the sender
-					RetrieveRequest retrieveMessage = new RetrieveRequest(me.sender, me.eventId);
-					this.getProcessById(me.sender).receive(retrieveMessage);
-					// Create and add a new ActiveRequest
-					ActiveRetrieveRequest ar = new ActiveRetrieveRequest(me.eventId, this.getCurrentTick(), Destination.SENDER);
-					this.activeRetrieveRequest.add(ar);
+					// Check whether an active request for that eventId already exists
+					boolean alreadyActive = false;
+					for(ActiveRetrieveRequest ar : this.activeRetrieveRequest) {
+						if(ar.eventId.equals(me.eventId)) {
+							alreadyActive = true;
+							break;
+						}
+					}
+					if(!alreadyActive) {
+						// Create end send a retrieve message to the sender
+						RetrieveRequest retrieveMessage = new RetrieveRequest(me.sender, me.eventId);
+						this.getProcessById(me.sender).receive(retrieveMessage);
+						// Create and add a new ActiveRequest
+						ActiveRetrieveRequest ar = new ActiveRetrieveRequest(me.eventId, this.getCurrentTick(), Destination.SENDER);
+						this.activeRetrieveRequest.add(ar);
+					}
 				}
 				// In any case, remove the message from the retrieve queue (either received or request sent)
 				it.remove();
