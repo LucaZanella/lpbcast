@@ -117,7 +117,7 @@ public class Process {
 	}
 	
 	@ScheduledMethod(start=1 , interval=1)
-	public void step() {	
+	public void step() {
 		// check whether process should gossip or do nothing 
 		if(!isUnsubscribed) {
 			//extract from the receivedMessages queue the messages which arrive at the current tick
