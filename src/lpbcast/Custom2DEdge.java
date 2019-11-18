@@ -6,7 +6,7 @@ import repast.simphony.space.graph.RepastEdge;
 import repast.simphony.visualizationOGL2D.EdgeStyleOGL2D;
 
 public class Custom2DEdge implements EdgeStyleOGL2D{
-
+	public static Color gossipEventEdgeColor = Color.green;
 	@Override
 	public int getLineWidth(RepastEdge<?> edge) {
 		if(edge.getWeight() == Visualization.EdgeType.RETRIEVE.ordinal()) {
@@ -19,9 +19,9 @@ public class Custom2DEdge implements EdgeStyleOGL2D{
 	@Override
 	public Color getColor(RepastEdge<?> edge) {
 		if(edge.getWeight() == Visualization.EdgeType.FANOUT.ordinal()) {
-			return Color.green;
+			return gossipEventEdgeColor;
 		} else if(edge.getWeight() == Visualization.EdgeType.VIEW.ordinal()){
-			return Color.gray;
+			return new Color(214, 214, 214);
 		} else {
 			return Color.red;
 		}

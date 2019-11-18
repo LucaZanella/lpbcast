@@ -4,13 +4,13 @@
   <styles>
     <entry>
       <string>lpbcast.Process</string>
-      <string>repast.simphony.visualization.editedStyle.EditedStyle2D</string>
+      <string>lpbcast.NodeStyle</string>
     </entry>
   </styles>
   <editedStyles>
     <entry>
       <string>lpbcast.Process</string>
-      <string>lpbcast.Process.style_7.xml</string>
+      <null/>
     </entry>
   </editedStyles>
   <netStyles>
@@ -33,7 +33,7 @@
     <pType>LAST</pType>
     <duration>-1.0</duration>
     <frequency>REPEAT</frequency>
-    <hashCode>-1884172744</hashCode>
+    <hashCode>2139633932</hashCode>
   </schedParams>
   <layoutClassName>foo.bar.baz</layoutClassName>
   <layoutProjection>space</layoutProjection>
