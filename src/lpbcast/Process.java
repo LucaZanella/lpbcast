@@ -696,6 +696,10 @@ public class Process {
 	public void lpbDelivery(Event event) {
 		//System.out.println("Deliver event " + event.eventId.id);
 		
+		/**
+		 * TODO MAYBE PASS DATA COLLECTOR AS ATTRIBUTe OF METHOD???
+		 * CHANGE DATA SOURCE NAMES AND STUFF
+		 */
 		//get data collector about delivery and notify it
 		Context<Collector> context = ContextUtils.getContext(this);
 		IndexedIterable<Collector> collection =  context.getObjects(Collector.class);
