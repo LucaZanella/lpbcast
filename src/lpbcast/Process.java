@@ -371,7 +371,6 @@ public class Process {
 		while(it.hasNext()) {
 			ActiveRetrieveRequest ar = it.next();
 			if(retrieveReplyMessage.event.eventId.equals(ar.eventId)) {
-				collector.notifyReplySource(ar.destination);
 				// Remove the element in activeRequest
 				it.remove();
 				// Process event received
