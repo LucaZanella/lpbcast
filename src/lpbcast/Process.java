@@ -330,7 +330,7 @@ public class Process {
 				RetrieveReply replyMessage = new RetrieveReply(this.processId, ev.clone());
 				try {
 					// visualize link on display
-					if(id.equals(visual.currentVisEvent.eventId.id)) {
+					if(id.id.equals(visual.currentVisEvent.eventId.id)) {
 						visual.addLink(this, getProcessById(retrieveRequestMessage.sender), Visualization.EdgeType.RETRIEVE_REPLY);
 					}
 					this.getProcessById(retrieveRequestMessage.sender).receive(replyMessage);
@@ -345,7 +345,7 @@ public class Process {
 				RetrieveReply replyMessage = new RetrieveReply(this.processId, entry.getKey().clone());
 				try {
 					// visualize link on display
-					if(id.equals(visual.currentVisEvent.eventId.id)) {
+					if(id.id.equals(visual.currentVisEvent.eventId.id)) {
 						visual.addLink(this, getProcessById(retrieveRequestMessage.sender), Visualization.EdgeType.RETRIEVE_REPLY);
 					}
 					this.getProcessById(retrieveRequestMessage.sender).receive(replyMessage);
@@ -587,7 +587,7 @@ public class Process {
 					}
 					if(!alreadyActive) {
 						// Create end send a retrieve message to the sender
-						RetrieveRequest retrieveMessage = new RetrieveRequest(me.sender, me.eventId);
+						RetrieveRequest retrieveMessage = new RetrieveRequest(this.processId, me.eventId);
 						try {
 							this.getProcessById(me.sender).receive(retrieveMessage);
 							// Visualize retrieve link
