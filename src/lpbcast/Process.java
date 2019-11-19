@@ -100,23 +100,6 @@ public class Process {
 	public double unsubscriptionTick; //needed for unsubscription color representation
 	public boolean isNewNode;  //needed for unsubscription color representation
 	
-	public static final int EVENTS_MAX_SIZE = 5; // Just for debugging purposes
-	public static final int UNSUBS_MAX_SIZE = 5; // Just for debugging purposes
-	public static final int EVENTIDS_MAX_SIZE = 20;
-	public static final int VIEW_MAX_SIZE = 5; // Just for debugging purposes
-	public static final int SUBS_MAX_SIZE = 5; // Just for debugging purposes
-	public static final int ARCHIVED_MAX_SIZE = 10; // Just for debugging purposes
-	public static final int UNSUBS_VALIDITY = 100; // elements in the unSubs buffer are expire after this amount of tick has passed
-	public static final int LONG_AGO = 100; // Just for debugging purposes
-	public static final double K = 0.5; // Just for debugging purposes
-	public static final int MESSAGE_MAX_DELAY = 1; // a message takes at most this amount of ticks to reach destination
-	public static final boolean SYNC = true; // if set to false, message could have delays
-	public static final int F = 3; // Just for debugging purposes
-	public static final int RECOVERY_TIMEOUT = 20; // Retransmission timeout to different destinations
-	public static final int K_RECOVERY = 20; // Enough tick passed eventId is eligible for recovery
-	public static final boolean AGE_BASED_MESSAGE_PURGING = true; // Enable optimization that removes messages from event buffer based on their dissemination in the system
-	public static final boolean FREQUENCY_BASED_MEMBERSHIP_PURGING = true; // Enable optimization that removes processIds form view and subs based on their dissemination in the system
-	public static final double EVENT_GENERATION_PROBABILITY = 0.1;
 	
 	/**
 	 * Instantiates a new process.
@@ -182,12 +165,12 @@ public class Process {
 	 */
 	public void receive(Message message) {
 		double nextTick = getCurrentTick() + 1;
-		if(SYNC) {
+		if(Configuration.SYNC) {
 			// The message will be processes at the next tick
 			message.tick = nextTick;
 		} else {
 			//The message is received at the next tick + a random delay
-			message.tick = getCurrentTick() + RandomHelper.nextIntFromTo((int)nextTick, MESSAGE_MAX_DELAY);
+			message.tick = getCurrentTick() + RandomHelper.nextIntFromTo((int)nextTick, Configuration.MESSAGE_MAX_DELAY);
 		}
 
 		receivedMessages.add(message);
@@ -206,11 +189,6 @@ public class Process {
 	public void step() {
 		// check whether process should gossip or do nothing 
 		if(!isUnsubscribed) {
-			
-			if(RandomHelper.nextDouble() < 0.001) {
-		    	lpbCast();
-		    }
-			
 			//extract from the receivedMessages queue the messages which arrive at the current tick
 			Iterator<Message> it = this.receivedMessages.iterator();
 			while(it.hasNext()) {
@@ -234,17 +212,16 @@ public class Process {
 			//Check missing events
 			this.retrieveMissingMessages();
 			
-			// START DEBUGGING
-	        if(RandomHelper.nextDouble() < EVENT_GENERATION_PROBABILITY) {
+			//Generate message if required
+	        if(RandomHelper.nextDouble() < Configuration.EVENT_GENERATION_PROBABILITY) {
 	        	lpbCast();
 	        }
-	        //END DEBUGGING
 			
 			//Gossip
 			this.gossip();
 
 			//needed for visualization
-			if(this.getCurrentTick() - this.subscriptionTick < Visualization.SUB_VISUAL_TIME) {
+			if(this.getCurrentTick() - this.subscriptionTick < Configuration.SUB_VISUAL_TIME) {
 				this.isNewNode = true;
 			} else {
 				this.isNewNode = false;
@@ -390,18 +367,18 @@ public class Process {
 	 * Keeps fixed the size of the unsubscription buffer.
 	 */
 	public void trimUnSubs() {
-		if(unSubs.size() > UNSUBS_MAX_SIZE) {
+		if(unSubs.size() > Configuration.UNSUBS_MAX_SIZE) {
 			// first trim is done based on expiration date of unsubs
 			Iterator<Map.Entry<Integer, Double>> it = unSubs.entrySet().iterator();
 			while(it.hasNext()) {
 				Map.Entry<Integer, Double> pair = it.next();
-				if(getCurrentTick() >= (pair.getValue() + UNSUBS_VALIDITY)) {
+				if(getCurrentTick() >= (pair.getValue() + Configuration.UNSUBS_VALIDITY)) {
 					it.remove(); // avoids a ConcurrentModificationException
 				}
 			}	
 		}
 		trimEvents();
-		while(unSubs.size() > UNSUBS_MAX_SIZE) {
+		while(unSubs.size() > Configuration.UNSUBS_MAX_SIZE) {
 			// second trim is done by sampling random element
 			// get a random key from the buffer HashMap
 			Object[] bufferKeys = unSubs.keySet().toArray();
@@ -415,7 +392,7 @@ public class Process {
 	 * Keeps fixed the size of the view buffer.
 	 */
 	public void trimView() {
-		while(view.size() > VIEW_MAX_SIZE) {
+		while(view.size() > Configuration.VIEW_MAX_SIZE) {
 			int target = selectProcess(view);
 			int frequency = view.remove(target);
 			subs.put(target, frequency);
@@ -426,7 +403,7 @@ public class Process {
 	 * Keeps fixed the size of the subscription buffer.
 	 */
 	public void trimSubs() {
-		while(subs.size() > SUBS_MAX_SIZE) {
+		while(subs.size() > Configuration.SUBS_MAX_SIZE) {
 			int target = selectProcess(subs);
 			subs.remove(target);
 		}
@@ -441,7 +418,7 @@ public class Process {
 	 */
 	public int selectProcess(HashMap<Integer, Integer> buffer) {	
 		Integer target = null;
-		if(Process.FREQUENCY_BASED_MEMBERSHIP_PURGING) {
+		if(Configuration.FREQUENCY_BASED_MEMBERSHIP_PURGING) {
 			// optimization enable, use frequencies to decide which element must be removed
 			boolean found = false;		
 			Double averageFrequency = buffer.values().stream().mapToInt(i -> i).average().orElse(0.0);
@@ -453,7 +430,7 @@ public class Process {
 				target = (Integer) bufferKeys[RandomHelper.nextIntFromTo(0, bufferKeys.length - 1)];
 				Integer currentFrequency = buffer.get(target);
 				
-				if(currentFrequency > K * averageFrequency) {
+				if(currentFrequency > Configuration.K * averageFrequency) {
 					found = true;
 				} else {
 					// the old value of frequency is replaced with the new one
@@ -475,16 +452,16 @@ public class Process {
 	 * Keeps fixed the size of the events buffer.
 	 */
 	public void trimEvents() {
-		if(Process.AGE_BASED_MESSAGE_PURGING) {
+		if(Configuration.AGE_BASED_MESSAGE_PURGING) {
 			// remove elements from events buffer that were received a long time ago wrt
 			// to more recent messages from the same broadcast source
-			if(events.size() > EVENTS_MAX_SIZE) {
+			if(events.size() > Configuration.EVENTS_MAX_SIZE) {
 				HashSet<Event> eventsToRemove = new HashSet<>();
 				Iterator<Event> it = events.iterator();
 			    while(it.hasNext()) {
 			      Event currentEvent = it.next();
 			      List<Event> filtered = events.stream()
-			          .filter(e -> e.eventId.origin == currentEvent.eventId.origin && (currentEvent.age - e.age) > LONG_AGO)
+			          .filter(e -> e.eventId.origin == currentEvent.eventId.origin && (currentEvent.age - e.age) > Configuration.LONG_AGO)
 			          .collect(Collectors.toList());
 			      eventsToRemove.addAll(filtered);
 			    }		    
@@ -492,7 +469,7 @@ public class Process {
 			}
 
 			// remove elements from events buffer with the largest age
-			while(events.size() > EVENTS_MAX_SIZE) {
+			while(events.size() > Configuration.EVENTS_MAX_SIZE) {
 				Event oldestEvent = null;
 				
 				// find the oldest event
@@ -513,7 +490,7 @@ public class Process {
 			}
 		} else {
 			// remove elements from event buffer randomly
-			while(events.size() > EVENTS_MAX_SIZE) {
+			while(events.size() > Configuration.EVENTS_MAX_SIZE) {
 				int targetIndex = RandomHelper.nextIntFromTo(0, events.size() - 1);
 				Event targetEvent = (Event) events.toArray()[targetIndex];
 				events.remove(targetEvent);
@@ -529,7 +506,7 @@ public class Process {
 	 * Keeps fixed the size of the archived events buffer.
 	 */
 	public void trimArchivedEvents() {
-		while(this.archivedEvents.size() > ARCHIVED_MAX_SIZE) {
+		while(this.archivedEvents.size() > Configuration.ARCHIVED_MAX_SIZE) {
 			Event minKey = null;
 			Double minValue = Double.MAX_VALUE; 
 			//Find oldest event
@@ -568,7 +545,7 @@ public class Process {
 	 * Keeps fixed the size of the events' identifiers buffer.
 	 */
 	public void trimEventIds() {
-		while(this.eventIds.size() > EVENTIDS_MAX_SIZE) {
+		while(this.eventIds.size() > Configuration.EVENTIDS_MAX_SIZE) {
 			eventIds.remove();
 		}
 	}
@@ -583,7 +560,7 @@ public class Process {
 		Iterator<MissingEvent> it = this.retrieve.iterator();
 		while(it.hasNext()){
 			MissingEvent me = it.next();
-			if(this.getCurrentTick() - me.tick > K_RECOVERY) {
+			if(this.getCurrentTick() - me.tick > Configuration.K_RECOVERY) {
 				if(!this.eventIds.contains(me.eventId)) {
 					// Check whether an active request for that eventId already exists
 					boolean alreadyActive = false;
@@ -659,7 +636,7 @@ public class Process {
 		HashSet<Integer> gossipTargets = new HashSet<>();
 		
 		// if view size is smaller than fanout, number of target processes is less then fanout
-		int numTarget = view.size() >= F ? F : view.size();
+		int numTarget = view.size() >= Configuration.F ? Configuration.F : view.size();
 		while(gossipTargets.size() < numTarget) {
 			assert bufferKeys.length > 0;
 			int target = (Integer) bufferKeys[RandomHelper.nextIntFromTo(0, bufferKeys.length - 1)];
@@ -723,7 +700,7 @@ public class Process {
 		Iterator<ActiveRetrieveRequest> it = activeRetrieveRequest.iterator();
 		while(it.hasNext()) {
 			ActiveRetrieveRequest ar = it.next();
-			if(this.getCurrentTick() - ar.tick >= RECOVERY_TIMEOUT) {
+			if(this.getCurrentTick() - ar.tick >= Configuration.RECOVERY_TIMEOUT) {
 				switch(ar.destination) {
 					case SENDER:
 						RetrieveRequest randMessage = new RetrieveRequest(this.processId, ar.eventId);

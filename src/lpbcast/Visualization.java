@@ -25,10 +25,6 @@ public class Visualization {
 	public boolean newEvent;
 	public int currentColorIndex;
 	public Color[] eventColors;
-	
-	public static final int EVENT_VISUAL_TIME = 100;  //Number of tick after which currentVisEvent is set again
-	public static final int SUB_VISUAL_TIME = 2;
-	public static final int UNSUB_VISUAL_TIME = 2;
 
 	public Visualization(Network<Object> network, Context<Object> context) {
 		this.network = network;
@@ -63,7 +59,7 @@ public class Visualization {
 		// Remove all the current edges 
 		this.network.removeEdges();
 		//if EVENT_VISUAL_TIME timeout is expired, a new event has to be considered
-		if(this.getCurrentTick() - this.currentVisEventTick > EVENT_VISUAL_TIME) {
+		if(this.getCurrentTick() - this.currentVisEventTick > Configuration.EVENT_VISUAL_TIME) {
 			// set currentVisEvent to an unexisting event -> reset the visualization
 			this.currentVisEvent = new Event(new EventId(UUID.randomUUID(), -1), 0); 
 			//Send to each process the new event to consider
@@ -96,7 +92,7 @@ public class Visualization {
 	
 	public void notifyNewEvent(Event event) {
 		// Check if the event to consider has to be changed
-		if(this.getCurrentTick() - this.currentVisEventTick > EVENT_VISUAL_TIME) {
+		if(this.getCurrentTick() - this.currentVisEventTick > Configuration.EVENT_VISUAL_TIME) {
 			// the first event delivered after the timeout is considered
 			this.currentVisEventTick = this.getCurrentTick();
 			this.currentVisEvent = event;
