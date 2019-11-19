@@ -3,11 +3,7 @@ package lpbcast;
 
 
 import java.awt.Color;
-import java.util.HashMap;
-import java.util.HashSet;
 import java.util.Iterator;
-import java.util.Map;
-import java.util.Random;
 import java.util.Set;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
@@ -15,7 +11,6 @@ import repast.simphony.context.Context;
 import repast.simphony.engine.environment.RunEnvironment;
 import repast.simphony.engine.schedule.ScheduleParameters;
 import repast.simphony.engine.schedule.ScheduledMethod;
-import repast.simphony.random.RandomHelper;
 import repast.simphony.space.graph.Network;
 
 
@@ -43,7 +38,7 @@ public class Visualization {
 		this.context = context;
 		this.newEvent = false;
 		this.currentColorIndex = 0;
-		this.eventColors = new Color[]{Color.GREEN, Color.blue, Color.CYAN, Color.magenta};
+		this.eventColors = new Color[]{Color.GREEN, Color.yellow, Color.CYAN, Color.magenta};
 		
 	}
 	
@@ -62,7 +57,6 @@ public class Visualization {
 		}
 		return this.eventColors[currentColorIndex];
 	}
-	
 	
 	@ScheduledMethod(start = 1, interval = 1, priority = ScheduleParameters.FIRST_PRIORITY)
 	public void startStep() {
@@ -96,14 +90,10 @@ public class Visualization {
 		this.currentLinks.clear();
 	}
 
-
-
-
 	public void addLink(Process source, Process target, EdgeType type) {
 		this.currentLinks.add(new Link(source, target, type));
 	}
 	
-
 	public void notifyNewEvent(Event event) {
 		// Check if the event to consider has to be changed
 		if(this.getCurrentTick() - this.currentVisEventTick > EVENT_VISUAL_TIME) {
@@ -112,8 +102,9 @@ public class Visualization {
 			this.currentVisEvent = event;
 			this.newEvent = true;
 			//Generate a random color for the new event
-			NodeStyle.deliveredNodeColor = getNextColor();
-			Custom2DEdge.gossipEventEdgeColor = getNextColor();
+			Color current = getNextColor();
+			NodeStyle.deliveredNodeColor = current;
+			Custom2DEdge.gossipEventEdgeColor = current;
 			
 			
 		} 

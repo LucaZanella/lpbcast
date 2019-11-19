@@ -62,7 +62,7 @@ public class Process {
 	public static final int F = 3; // Just for debugging purposes
 	public static final int RECOVERY_TIMEOUT = 20; // Retransmission timeout to different destinations
 	public static final int K_RECOVERY = 20; // Enough tick passed eventId is eligible for recovery
-	public static final double EVENT_GENERATION_PROBABILITY = 0.001;
+	public static final double EVENT_GENERATION_PROBABILITY = 0.1;
 	
 	public Process(int processId, HashMap<Integer, Integer> view, Visualization visual) {
 		this.processId = processId;
@@ -246,6 +246,7 @@ public class Process {
 					// visualize link on display
 					if(id.equals(visual.currentVisEvent.eventId.id)) {
 						visual.addLink(this, getProcessById(retrieveRequestMessage.sender), Visualization.EdgeType.RETRIEVE_REPLY);
+						System.out.println("ReplyRequest");
 					}
 					this.getProcessById(retrieveRequestMessage.sender).receive(replyMessage);
 				} catch(NullPointerException e) {
@@ -261,6 +262,7 @@ public class Process {
 					// visualize link on display
 					if(id.equals(visual.currentVisEvent.eventId.id)) {
 						visual.addLink(this, getProcessById(retrieveRequestMessage.sender), Visualization.EdgeType.RETRIEVE_REPLY);
+						System.out.println("ReplyRequest");
 					}
 					this.getProcessById(retrieveRequestMessage.sender).receive(replyMessage);
 				} catch(NullPointerException e) {
@@ -516,13 +518,8 @@ public class Process {
 			}
 		}
 		if(containsVisEvent) {
-			for(Map.Entry<Integer, Integer> entry : this.view.entrySet()) {
-				//for each process in the view, check if it is present also in the fanout
-				if(gossipTargets.contains(entry.getKey())) {
-					visual.addLink(this, this.getProcessById(entry.getKey()), Visualization.EdgeType.FANOUT);
-				} else {
-					visual.addLink(this, this.getProcessById(entry.getKey()), Visualization.EdgeType.VIEW);
-				}
+			for(int pid : gossipTargets) {
+				visual.addLink(this, this.getProcessById(pid), Visualization.EdgeType.FANOUT);
 			}
 		}
 

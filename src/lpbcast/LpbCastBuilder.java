@@ -50,7 +50,7 @@ public class LpbCastBuilder implements ContextBuilder<Object> {
 	public Context build(Context<Object> context) {
 		context.setId("lpbcast");
 		unsubscribedProcesses = new HashMap<>();
-		int processCount = 10;
+		int processCount = 20;
 		int viewSize = 5;
 		
 		this.context = context;
