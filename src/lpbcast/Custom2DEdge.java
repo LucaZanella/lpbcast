@@ -9,7 +9,7 @@ public class Custom2DEdge implements EdgeStyleOGL2D{
 	public static Color gossipEventEdgeColor = Color.green;
 	@Override
 	public int getLineWidth(RepastEdge<?> edge) {
-		if(edge.getWeight() == Visualization.EdgeType.RETRIEVE_REPLY.ordinal() || edge.getWeight() == Visualization.EdgeType.RETRIEVE_REQUEST.ordinal()) {
+		if(edge.getWeight() == Visualization.EdgeType.RETRIEVE_REPLY.ordinal() || edge.getWeight() == Visualization.EdgeType.RETRIEVE_REQUEST.ordinal() || edge.getWeight() == Visualization.EdgeType.VIEW.ordinal()) {
 			return 1;
 		} else {
 			return 3;

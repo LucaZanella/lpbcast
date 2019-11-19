@@ -109,14 +109,14 @@ public class Process {
 	public static final int UNSUBS_VALIDITY = 100; // elements in the unSubs buffer are expire after this amount of tick has passed
 	public static final int LONG_AGO = 100; // Just for debugging purposes
 	public static final double K = 0.5; // Just for debugging purposes
-	public static final int MESSAGE_MAX_DELAY = 1; // a message takes at most this amount of ticks to reach destination
+	public static final int MESSAGE_MAX_DELAY = 10; // a message takes at most this amount of ticks to reach destination
 	public static final boolean SYNC = true; // if set to false, message could have delays
 	public static final int F = 3; // Just for debugging purposes
 	public static final int RECOVERY_TIMEOUT = 20; // Retransmission timeout to different destinations
 	public static final int K_RECOVERY = 20; // Enough tick passed eventId is eligible for recovery
 	public static final boolean AGE_BASED_MESSAGE_PURGING = true; // Enable optimization that removes messages from event buffer based on their dissemination in the system
 	public static final boolean FREQUENCY_BASED_MEMBERSHIP_PURGING = true; // Enable optimization that removes processIds form view and subs based on their dissemination in the system
-	public static final double EVENT_GENERATION_PROBABILITY = 0.1;
+	public static final double EVENT_GENERATION_PROBABILITY = 0.001;
 	
 	/**
 	 * Instantiates a new process.
@@ -158,10 +158,9 @@ public class Process {
 	 * @param processId the id of the process to be retrieved
 	 * @return the process with the given id if it exists, null otherwise
 	 */
-	public Process getProcessById(int processId) {
+	public static Process getProcessById(int processId, Context context) {
 		// retrieves the context of the current process
 		Process target = null;
-		Context<Process> context = ContextUtils.getContext(this);
 		IndexedIterable<Process> collection =  context.getObjects(Process.class);
 		Iterator<Process> iterator = collection.iterator();
 		
@@ -204,13 +203,9 @@ public class Process {
 	 */
 	@ScheduledMethod(start=1 , interval=1)
 	public void step() {
+		visual.addViewLinks(this, view);
 		// check whether process should gossip or do nothing 
 		if(!isUnsubscribed) {
-			
-			if(RandomHelper.nextDouble() < 0.001) {
-		    	lpbCast();
-		    }
-			
 			//extract from the receivedMessages queue the messages which arrive at the current tick
 			Iterator<Message> it = this.receivedMessages.iterator();
 			while(it.hasNext()) {
@@ -339,9 +334,9 @@ public class Process {
 				try {
 					// visualize link on display
 					if(id.id.equals(visual.currentVisEvent.eventId.id)) {
-						visual.addLink(this, getProcessById(retrieveRequestMessage.sender), Visualization.EdgeType.RETRIEVE_REPLY);
+						visual.addLink(this, getProcessById(retrieveRequestMessage.sender, ContextUtils.getContext(this)), Visualization.EdgeType.RETRIEVE_REPLY);
 					}
-					this.getProcessById(retrieveRequestMessage.sender).receive(replyMessage);
+					getProcessById(retrieveRequestMessage.sender, ContextUtils.getContext(this)).receive(replyMessage);
 				} catch(NullPointerException e) {
 					// Process tries to contact a process exited from the context -> do nothing
 				}
@@ -354,9 +349,9 @@ public class Process {
 				try {
 					// visualize link on display
 					if(id.id.equals(visual.currentVisEvent.eventId.id)) {
-						visual.addLink(this, getProcessById(retrieveRequestMessage.sender), Visualization.EdgeType.RETRIEVE_REPLY);
+						visual.addLink(this, getProcessById(retrieveRequestMessage.sender, ContextUtils.getContext(this)), Visualization.EdgeType.RETRIEVE_REPLY);
 					}
-					this.getProcessById(retrieveRequestMessage.sender).receive(replyMessage);
+					getProcessById(retrieveRequestMessage.sender, ContextUtils.getContext(this)).receive(replyMessage);
 				} catch(NullPointerException e) {
 					// Process tries to contact a process exited from the context -> do nothing
 				}
@@ -376,6 +371,7 @@ public class Process {
 		while(it.hasNext()) {
 			ActiveRetrieveRequest ar = it.next();
 			if(retrieveReplyMessage.event.eventId.equals(ar.eventId)) {
+				collector.notifyReplySource(ar.destination);
 				// Remove the element in activeRequest
 				it.remove();
 				// Process event received
@@ -597,10 +593,10 @@ public class Process {
 						// Create end send a retrieve message to the sender
 						RetrieveRequest retrieveMessage = new RetrieveRequest(this.processId, me.eventId);
 						try {
-							this.getProcessById(me.sender).receive(retrieveMessage);
+							getProcessById(me.sender, ContextUtils.getContext(this)).receive(retrieveMessage);
 							// Visualize retrieve link
 							if(me.eventId.id.equals(visual.currentVisEvent.eventId.id)) {
-								this.visual.addLink(this, getProcessById(me.sender), Visualization.EdgeType.RETRIEVE_REQUEST);
+								visual.addLink(this, getProcessById(me.sender, ContextUtils.getContext(this)), Visualization.EdgeType.RETRIEVE_REQUEST);
 							}
 						} catch(NullPointerException e) {
 							// Process tries to contact a process exited from the context -> do nothing
@@ -668,7 +664,7 @@ public class Process {
 		}
 		
 		for(Integer gossipTarget : gossipTargets) {
-			Process currentTarget = getProcessById(gossipTarget);
+			Process currentTarget = getProcessById(gossipTarget, ContextUtils.getContext(this));
 			try {
 				currentTarget.receive(gossip);
 			} catch(NullPointerException e) {
@@ -686,7 +682,7 @@ public class Process {
 		}
 		if(containsVisEvent) {
 			for(int pid : gossipTargets) {
-				visual.addLink(this, this.getProcessById(pid), Visualization.EdgeType.FANOUT);
+				visual.addLink(this, getProcessById(pid, ContextUtils.getContext(this)), Visualization.EdgeType.FANOUT);
 			}
 		}
 
@@ -733,10 +729,10 @@ public class Process {
 						int target = (Integer) viewKeys[RandomHelper.nextIntFromTo(0, viewKeys.length - 1)];
 						// send message to a random process in the view
 						try {
-							getProcessById(target).receive(randMessage);
+							getProcessById(target, ContextUtils.getContext(this)).receive(randMessage);
 							// Visualize the retrieve edge
 							if(ar.eventId.id.equals(visual.currentVisEvent.eventId.id)) {
-								this.visual.addLink(this, getProcessById(target), Visualization.EdgeType.RETRIEVE_REQUEST);
+								this.visual.addLink(this, getProcessById(target, ContextUtils.getContext(this)), Visualization.EdgeType.RETRIEVE_REQUEST);
 							}
 						}catch(NullPointerException e) {
 							// Process tries to contact a process exited from the context -> do nothing
@@ -750,10 +746,10 @@ public class Process {
 						RetrieveRequest origMessage = new RetrieveRequest(this.processId, ar.eventId);
 						// send message to the originator
 						try {
-							getProcessById(ar.eventId.origin).receive(origMessage);
+							getProcessById(ar.eventId.origin, ContextUtils.getContext(this)).receive(origMessage);
 							// Visualize the retrieve edge
 							if(ar.eventId.id.equals(visual.currentVisEvent.eventId.id)) {
-								this.visual.addLink(this, getProcessById(ar.eventId.origin), Visualization.EdgeType.RETRIEVE_REQUEST);
+								this.visual.addLink(this, getProcessById(ar.eventId.origin, ContextUtils.getContext(this)), Visualization.EdgeType.RETRIEVE_REQUEST);
 							}
 						}catch(NullPointerException e) {
 							// Process tries to contact a process exited from the context -> do nothing
@@ -780,7 +776,7 @@ public class Process {
 	 * @param event the event notification to be delivered
 	 */
 	public void lpbDelivery(Event event) {
-		System.out.println("Deliver event " + event.eventId.id);
+		//System.out.println("Deliver event " + event.eventId.id);
 
 		if(visual.currentVisEvent.eventId.id.equals(event.eventId.id)) {
 			deliveredCurrentVisualEvent = true;
