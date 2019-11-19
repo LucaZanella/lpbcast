@@ -13,6 +13,7 @@ import java.util.UUID;
 import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.stream.Collectors;
 
+import analysis.Collector;
 import lpbcast.ActiveRetrieveRequest.Destination;
 import repast.simphony.context.Context;
 import repast.simphony.engine.environment.RunEnvironment;
@@ -91,6 +92,7 @@ public class Process {
 	 */
 	public boolean unsubscriptionRequested; 
 	public Visualization visual;
+	public Collector collector;
 	
 	// Needed for visualization
 	public boolean deliveredCurrentVisualEvent; // needed for node color representation
@@ -122,7 +124,7 @@ public class Process {
 	 * @param processId the identifier of the process
 	 * @param view the subset of process known by this process
 	 */
-	public Process(int processId, HashMap<Integer, Integer> view, Visualization visual) {
+	public Process(int processId, HashMap<Integer, Integer> view, Visualization visual, Collector collector) {
 		this.processId = processId;
 		this.view = view;
 		this.receivedMessages = new ConcurrentLinkedQueue<>();
@@ -138,6 +140,7 @@ public class Process {
 		this.visual = visual;
 		this.deliveredCurrentVisualEvent = false;
 		this.subscriptionTick = 0 - Double.MAX_VALUE;
+		this.collector = collector;
 	}
 	
 	/**
@@ -203,6 +206,11 @@ public class Process {
 	public void step() {
 		// check whether process should gossip or do nothing 
 		if(!isUnsubscribed) {
+			
+			if(RandomHelper.nextDouble() < 0.001) {
+		    	lpbCast();
+		    }
+			
 			//extract from the receivedMessages queue the messages which arrive at the current tick
 			Iterator<Message> it = this.receivedMessages.iterator();
 			while(it.hasNext()) {
@@ -772,10 +780,14 @@ public class Process {
 	 * @param event the event notification to be delivered
 	 */
 	public void lpbDelivery(Event event) {
-		//System.out.println("Deliver event " + event.eventId.id);
+		System.out.println("Deliver event " + event.eventId.id);
+
 		if(visual.currentVisEvent.eventId.id.equals(event.eventId.id)) {
 			deliveredCurrentVisualEvent = true;
 		}
+
+		//notify collector about event delivery
+		this.collector.notifyMessagePropagation(event);
 	}
 	
 	/**

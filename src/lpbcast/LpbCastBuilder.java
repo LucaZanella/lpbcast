@@ -7,6 +7,7 @@ import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Map;
 
+import analysis.Collector;
 import repast.simphony.context.Context;
 import repast.simphony.context.space.continuous.ContinuousSpaceFactory;
 import repast.simphony.context.space.continuous.ContinuousSpaceFactoryFinder;
@@ -35,6 +36,7 @@ public class LpbCastBuilder implements ContextBuilder<Object> {
 	public static final double UNSUBMISSION_PROBABILITY = 0.001;
 	public Context<Object> context;
 	public Visualization visual;
+	public Collector collector;
 	public int currentProcessId;
 	public HashMap<Process, Double> unsubscribedProcesses;
 
@@ -56,6 +58,11 @@ public class LpbCastBuilder implements ContextBuilder<Object> {
 		this.visual = new Visualization(network, context);
 		context.add(visual);
 		
+		// add collector meta-actor in order to perfom analysis of the protocol
+		this.collector = new Collector();
+		context.add(collector);
+				
+
 		// create processes
 		for(int i = 0; i < processCount; i++) {
 			HashMap<Integer, Integer> view = new HashMap<>(viewSize);
@@ -71,16 +78,11 @@ public class LpbCastBuilder implements ContextBuilder<Object> {
 				}	
 			}
 			
-			context.add(new Process(i, view, visual));
+			context.add(new Process(i, view, visual, collector));
 		}
 		
 		this.currentProcessId = processCount;
 		RunEnvironment.getInstance().getCurrentSchedule().schedule(ScheduleParameters.createRepeating(1, 1, ScheduleParameters.LAST_PRIORITY), ()-> step());
-		
-		//create cusom event
-		Process p = (Process) context.getRandomObjects(Process.class, 1).iterator().next();
-		p.lpbCast();
-		
 		
 		return context;
 	}
@@ -108,7 +110,7 @@ public class LpbCastBuilder implements ContextBuilder<Object> {
 				HashMap<Integer, Integer> processView = new HashMap<>();
 				processView.put(neighbor.processId, 0);
 				this.currentProcessId ++;
-				Process newProcess = new Process(this.currentProcessId, processView, this.visual);
+				Process newProcess = new Process(this.currentProcessId, processView, this.visual, this.collector);
 				context.add(newProcess);
 				Iterator<Object> ite = context.getAgentLayer(Object.class).iterator();
 				newProcess.subscribe(neighbor.processId);
