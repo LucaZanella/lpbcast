@@ -3,7 +3,9 @@ package lpbcast;
 
 
 import java.awt.Color;
+import java.util.HashMap;
 import java.util.Iterator;
+import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
@@ -12,6 +14,7 @@ import repast.simphony.engine.environment.RunEnvironment;
 import repast.simphony.engine.schedule.ScheduleParameters;
 import repast.simphony.engine.schedule.ScheduledMethod;
 import repast.simphony.space.graph.Network;
+import repast.simphony.util.ContextUtils;
 
 
 
@@ -84,6 +87,11 @@ public class Visualization {
 
 		// Empty the list of links and the list of new Events at every step
 		this.currentLinks.clear();
+	}
+	public void addViewLinks(Process source, HashMap<Integer, Integer> view) {
+		for(Map.Entry<Integer, Integer> entry : view.entrySet()) {
+			this.addLink(source, Process.getProcessById(entry.getKey(), ContextUtils.getContext(this)), EdgeType.VIEW);
+		}
 	}
 
 	public void addLink(Process source, Process target, EdgeType type) {

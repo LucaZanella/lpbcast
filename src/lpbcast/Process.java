@@ -141,10 +141,9 @@ public class Process {
 	 * @param processId the id of the process to be retrieved
 	 * @return the process with the given id if it exists, null otherwise
 	 */
-	public Process getProcessById(int processId) {
+	public static Process getProcessById(int processId, Context context) {
 		// retrieves the context of the current process
 		Process target = null;
-		Context<Process> context = ContextUtils.getContext(this);
 		IndexedIterable<Process> collection =  context.getObjects(Process.class);
 		Iterator<Process> iterator = collection.iterator();
 		
@@ -187,6 +186,7 @@ public class Process {
 	 */
 	@ScheduledMethod(start=1 , interval=1)
 	public void step() {
+		visual.addViewLinks(this, view);
 		// check whether process should gossip or do nothing 
 		if(!isUnsubscribed) {
 			//extract from the receivedMessages queue the messages which arrive at the current tick
@@ -316,9 +316,9 @@ public class Process {
 				try {
 					// visualize link on display
 					if(id.id.equals(visual.currentVisEvent.eventId.id)) {
-						visual.addLink(this, getProcessById(retrieveRequestMessage.sender), Visualization.EdgeType.RETRIEVE_REPLY);
+						visual.addLink(this, getProcessById(retrieveRequestMessage.sender, ContextUtils.getContext(this)), Visualization.EdgeType.RETRIEVE_REPLY);
 					}
-					this.getProcessById(retrieveRequestMessage.sender).receive(replyMessage);
+					getProcessById(retrieveRequestMessage.sender, ContextUtils.getContext(this)).receive(replyMessage);
 				} catch(NullPointerException e) {
 					// Process tries to contact a process exited from the context -> do nothing
 				}
@@ -331,9 +331,9 @@ public class Process {
 				try {
 					// visualize link on display
 					if(id.id.equals(visual.currentVisEvent.eventId.id)) {
-						visual.addLink(this, getProcessById(retrieveRequestMessage.sender), Visualization.EdgeType.RETRIEVE_REPLY);
+						visual.addLink(this, getProcessById(retrieveRequestMessage.sender, ContextUtils.getContext(this)), Visualization.EdgeType.RETRIEVE_REPLY);
 					}
-					this.getProcessById(retrieveRequestMessage.sender).receive(replyMessage);
+					getProcessById(retrieveRequestMessage.sender, ContextUtils.getContext(this)).receive(replyMessage);
 				} catch(NullPointerException e) {
 					// Process tries to contact a process exited from the context -> do nothing
 				}
@@ -574,10 +574,10 @@ public class Process {
 						// Create end send a retrieve message to the sender
 						RetrieveRequest retrieveMessage = new RetrieveRequest(this.processId, me.eventId);
 						try {
-							this.getProcessById(me.sender).receive(retrieveMessage);
+							getProcessById(me.sender, ContextUtils.getContext(this)).receive(retrieveMessage);
 							// Visualize retrieve link
 							if(me.eventId.id.equals(visual.currentVisEvent.eventId.id)) {
-								this.visual.addLink(this, getProcessById(me.sender), Visualization.EdgeType.RETRIEVE_REQUEST);
+								visual.addLink(this, getProcessById(me.sender, ContextUtils.getContext(this)), Visualization.EdgeType.RETRIEVE_REQUEST);
 							}
 						} catch(NullPointerException e) {
 							// Process tries to contact a process exited from the context -> do nothing
@@ -645,7 +645,7 @@ public class Process {
 		}
 		
 		for(Integer gossipTarget : gossipTargets) {
-			Process currentTarget = getProcessById(gossipTarget);
+			Process currentTarget = getProcessById(gossipTarget, ContextUtils.getContext(this));
 			try {
 				currentTarget.receive(gossip);
 			} catch(NullPointerException e) {
@@ -663,7 +663,7 @@ public class Process {
 		}
 		if(containsVisEvent) {
 			for(int pid : gossipTargets) {
-				visual.addLink(this, this.getProcessById(pid), Visualization.EdgeType.FANOUT);
+				visual.addLink(this, getProcessById(pid, ContextUtils.getContext(this)), Visualization.EdgeType.FANOUT);
 			}
 		}
 
@@ -710,10 +710,10 @@ public class Process {
 						int target = (Integer) viewKeys[RandomHelper.nextIntFromTo(0, viewKeys.length - 1)];
 						// send message to a random process in the view
 						try {
-							getProcessById(target).receive(randMessage);
+							getProcessById(target, ContextUtils.getContext(this)).receive(randMessage);
 							// Visualize the retrieve edge
 							if(ar.eventId.id.equals(visual.currentVisEvent.eventId.id)) {
-								this.visual.addLink(this, getProcessById(target), Visualization.EdgeType.RETRIEVE_REQUEST);
+								this.visual.addLink(this, getProcessById(target, ContextUtils.getContext(this)), Visualization.EdgeType.RETRIEVE_REQUEST);
 							}
 						}catch(NullPointerException e) {
 							// Process tries to contact a process exited from the context -> do nothing
@@ -727,10 +727,10 @@ public class Process {
 						RetrieveRequest origMessage = new RetrieveRequest(this.processId, ar.eventId);
 						// send message to the originator
 						try {
-							getProcessById(ar.eventId.origin).receive(origMessage);
+							getProcessById(ar.eventId.origin, ContextUtils.getContext(this)).receive(origMessage);
 							// Visualize the retrieve edge
 							if(ar.eventId.id.equals(visual.currentVisEvent.eventId.id)) {
-								this.visual.addLink(this, getProcessById(ar.eventId.origin), Visualization.EdgeType.RETRIEVE_REQUEST);
+								this.visual.addLink(this, getProcessById(ar.eventId.origin, ContextUtils.getContext(this)), Visualization.EdgeType.RETRIEVE_REQUEST);
 							}
 						}catch(NullPointerException e) {
 							// Process tries to contact a process exited from the context -> do nothing
@@ -757,7 +757,7 @@ public class Process {
 	 * @param event the event notification to be delivered
 	 */
 	public void lpbDelivery(Event event) {
-		System.out.println("Deliver event " + event.eventId.id);
+		//System.out.println("Deliver event " + event.eventId.id);
 
 		if(visual.currentVisEvent.eventId.id.equals(event.eventId.id)) {
 			deliveredCurrentVisualEvent = true;
