@@ -3,7 +3,10 @@ package lpbcast;
 
 
 import java.awt.Color;
+import java.util.HashMap;
+import java.util.HashSet;
 import java.util.Iterator;
+import java.util.Map;
 import java.util.Random;
 import java.util.Set;
 import java.util.UUID;
@@ -18,7 +21,7 @@ import repast.simphony.space.graph.Network;
 
 
 public class Visualization {
-	public enum EdgeType {FANOUT, VIEW, RETRIEVE} 
+	public enum EdgeType {FANOUT, VIEW, RETRIEVE_REQUEST, RETRIEVE_REPLY} 
 	public Set<Link> currentLinks; // Set of links to print at the current step
 	public Event currentVisEvent; // Current event the system has to consider
 	public Double currentVisEventTick;  // tick in which the currentVisEvent is set
@@ -28,7 +31,7 @@ public class Visualization {
 	public int currentColorIndex;
 	public Color[] eventColors;
 	
-	public static final int EVENT_VISUAL_TIME = 20;  //Number of tick after which currentVisEvent is set again
+	public static final int EVENT_VISUAL_TIME = 100;  //Number of tick after which currentVisEvent is set again
 	public static final int SUB_VISUAL_TIME = 2;
 	public static final int UNSUB_VISUAL_TIME = 2;
 
@@ -82,7 +85,8 @@ public class Visualization {
 		// Update edges
 		for(Link entry : this.currentLinks) {
 			try {
-				this.network.addEdge(entry.source, entry.target, Double.valueOf(entry.type.ordinal()));
+				if(!entry.target.isUnsubscribed)
+					this.network.addEdge(entry.source, entry.target, Double.valueOf(entry.type.ordinal()));
 			} catch(Exception e) {
 				// some process is removed from the context, I can not show that edge
 			}
@@ -94,22 +98,12 @@ public class Visualization {
 
 
 
-	/**
-	 * Method called from Processes which want to visualize some edge
-	 * @param source 
-	 * @param target
-	 * @param type
-	 */
+
 	public void addLink(Process source, Process target, EdgeType type) {
 		this.currentLinks.add(new Link(source, target, type));
 	}
 	
-	/**
-	 * Method called from Processes that lpbcast a new event
-	 * @param source 
-	 * @param target
-	 * @param type
-	 */
+
 	public void notifyNewEvent(Event event) {
 		// Check if the event to consider has to be changed
 		if(this.getCurrentTick() - this.currentVisEventTick > EVENT_VISUAL_TIME) {

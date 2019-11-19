@@ -62,7 +62,7 @@ public class Process {
 	public static final int F = 3; // Just for debugging purposes
 	public static final int RECOVERY_TIMEOUT = 20; // Retransmission timeout to different destinations
 	public static final int K_RECOVERY = 20; // Enough tick passed eventId is eligible for recovery
-	public static final double EVENT_GENERATION_PROBABILITY = 0.01;
+	public static final double EVENT_GENERATION_PROBABILITY = 0.001;
 	
 	public Process(int processId, HashMap<Integer, Integer> view, Visualization visual) {
 		this.processId = processId;
@@ -243,6 +243,10 @@ public class Process {
 			if(ev.eventId.equals(id)) {
 				RetrieveReply replyMessage = new RetrieveReply(this.processId, ev.clone());
 				try {
+					// visualize link on display
+					if(id.equals(visual.currentVisEvent.eventId.id)) {
+						visual.addLink(this, getProcessById(retrieveRequestMessage.sender), Visualization.EdgeType.RETRIEVE_REPLY);
+					}
 					this.getProcessById(retrieveRequestMessage.sender).receive(replyMessage);
 				} catch(NullPointerException e) {
 					// Process tries to contact a process exited from the context -> do nothing
@@ -254,6 +258,10 @@ public class Process {
 			if(entry.getKey().eventId.equals(id)) {
 				RetrieveReply replyMessage = new RetrieveReply(this.processId, entry.getKey().clone());
 				try {
+					// visualize link on display
+					if(id.equals(visual.currentVisEvent.eventId.id)) {
+						visual.addLink(this, getProcessById(retrieveRequestMessage.sender), Visualization.EdgeType.RETRIEVE_REPLY);
+					}
 					this.getProcessById(retrieveRequestMessage.sender).receive(replyMessage);
 				} catch(NullPointerException e) {
 					// Process tries to contact a process exited from the context -> do nothing
@@ -427,7 +435,7 @@ public class Process {
 						this.getProcessById(me.sender).receive(retrieveMessage);
 						//Visualize retrieve link
 						if(me.eventId.id.equals(visual.currentVisEvent.eventId.id)) {
-							this.visual.addLink(this, getProcessById(me.sender), Visualization.EdgeType.RETRIEVE);
+							this.visual.addLink(this, getProcessById(me.sender), Visualization.EdgeType.RETRIEVE_REQUEST);
 						}
 					} catch(NullPointerException e) {
 						// Process tries to contact a process exited from the context -> do nothing
@@ -560,7 +568,7 @@ public class Process {
 							getProcessById(target).receive(randMessage);
 							// Visualize the retrieve edge
 							if(ar.eventId.id.equals(visual.currentVisEvent.eventId.id)) {
-								this.visual.addLink(this, getProcessById(target), Visualization.EdgeType.RETRIEVE);
+								this.visual.addLink(this, getProcessById(target), Visualization.EdgeType.RETRIEVE_REQUEST);
 							}
 						}catch(NullPointerException e) {
 							// Process tries to contact a process exited from the context -> do nothing
@@ -577,7 +585,7 @@ public class Process {
 							getProcessById(ar.eventId.origin).receive(origMessage);
 							// Visualize the retrieve edge
 							if(ar.eventId.id.equals(visual.currentVisEvent.eventId.id)) {
-								this.visual.addLink(this, getProcessById(ar.eventId.origin), Visualization.EdgeType.RETRIEVE);
+								this.visual.addLink(this, getProcessById(ar.eventId.origin), Visualization.EdgeType.RETRIEVE_REQUEST);
 							}
 						}catch(NullPointerException e) {
 							// Process tries to contact a process exited from the context -> do nothing
@@ -634,6 +642,7 @@ public class Process {
 		view.put(targetId, 0);
 		// change subscription status
 		isUnsubscribed = false;
+		isNewNode = true;
 		subscriptionTick = this.getCurrentTick();
 	}
 	

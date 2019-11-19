@@ -38,8 +38,9 @@ import repast.simphony.visualizationOGL2D.EdgeStyleOGL2D;;
 public class LpbCastBuilder implements ContextBuilder<Object> {
 	
 	public static final int INITIAL_FREQUENCY = 0;
-	public static final double SUBMISSION_PROBABILITY = 0.1;
-	public static final double UNSUBMISSION_PROBABILITY = 0.1;
+	public static final int INITIAL_NODES_NUMBER = 10;
+	public static final double SUBMISSION_PROBABILITY = 1;
+	public static final double UNSUBMISSION_PROBABILITY = 1;
 	public Context<Object> context;
 	public Visualization visual;
 	public int currentProcessId;
@@ -49,7 +50,7 @@ public class LpbCastBuilder implements ContextBuilder<Object> {
 	public Context build(Context<Object> context) {
 		context.setId("lpbcast");
 		unsubscribedProcesses = new HashMap<>();
-		int processCount = 40;
+		int processCount = 10;
 		int viewSize = 5;
 		
 		this.context = context;
@@ -82,15 +83,7 @@ public class LpbCastBuilder implements ContextBuilder<Object> {
 		}
 		
 		this.currentProcessId = processCount;
-		/*
-		
-
-		Object o;
-		do {
-			o = context.getRandomObject();
-		} while(!(o instanceof Process));
-		((Process)o).lpbCast();*/
-		RunEnvironment.getInstance().getCurrentSchedule().schedule(ScheduleParameters.createRepeating(2, 2, ScheduleParameters.LAST_PRIORITY), ()-> step());
+		RunEnvironment.getInstance().getCurrentSchedule().schedule(ScheduleParameters.createRepeating(1, 1, ScheduleParameters.LAST_PRIORITY), ()-> step());
 		return context;
 	}
 	/**
@@ -103,50 +96,53 @@ public class LpbCastBuilder implements ContextBuilder<Object> {
 	
 	
 	public void step() {
+		
+		Network<Object> c = ((Network<Object>)context.getProjection("process_network"));
+		
+		//Generate new nodes with a certain  probability
 		if(RandomHelper.nextDouble() < SUBMISSION_PROBABILITY) {
-			
+			//take a random neighbor
 			Iterator<Object> it = context.getRandomObjects(Process.class, 1).iterator();
-			
+			//the only case in which the iterator is empty is if all nodes have unsubmitted
 			if(it.hasNext()) {
 				Process neighbor =  (Process)it.next();
 				HashMap<Integer, Integer> processView = new HashMap<>();
 				processView.put(neighbor.processId, 0);
 				this.currentProcessId ++;
 				Process newProcess = new Process(this.currentProcessId, processView, this.visual);
-				System.out.println("adding " + newProcess.processId );
 				context.add(newProcess);
+				Iterator<Object> ite = context.getAgentLayer(Object.class).iterator();
 				newProcess.subscribe(neighbor.processId);
-			} else {
-				System.out.println("all nodes has unsubmitted");
-			}
-			
-		}
-		if(RandomHelper.nextDouble() < UNSUBMISSION_PROBABILITY) {
-
-			Iterator<Object> it = context.getRandomObjects(Process.class, 1).iterator();
-			
-			if(it.hasNext()) {
-				Process target =  (Process)it.next();
-				System.out.println("removing " +target.processId );
-				if(!target.isUnsubscribed) {
-					target.unsubscribe();
-					this.unsubscribedProcesses.put(target, this.getCurrentTick());
-				}
-			} else {
-				System.out.println("Al nodes has unsubmitted");
-			}
+			} 
 			
 		}
 		
+		// Unsubmit some node with a certain probability
+		if(RandomHelper.nextDouble() < UNSUBMISSION_PROBABILITY) {
+			//take a random node
+			Iterator<Object> it = context.getRandomObjects(Process.class, 1).iterator();
+			if(it.hasNext()) {
+				Process target =  (Process)it.next();
+				target.unsubscribe();
+				this.unsubscribedProcesses.put(target, this.getCurrentTick());
+				
+			} 
+			
+		}
+		
+		// after a constant amount of tick delete the unsubmitted nodes from the context
 		Iterator<Map.Entry<Process, Double>> it = this.unsubscribedProcesses.entrySet().iterator();
 		while(it.hasNext()) {
 			Map.Entry<Process, Double> entry = it.next();
 			if(this.getCurrentTick() - entry.getValue() > Visualization.UNSUB_VISUAL_TIME) {
+				Process p = entry.getKey();
+				context.remove(p);
 				it.remove();
-				context.remove(entry.getKey());
 			}
+			
 		}
-		System.out.print("");
+		
+		
 	}
 	
 

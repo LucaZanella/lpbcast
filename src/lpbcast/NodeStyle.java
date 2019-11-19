@@ -1,6 +1,7 @@
 package lpbcast;
 
 import java.awt.Color;
+import java.awt.Font;
 import java.util.Random;
 
 import repast.simphony.engine.environment.RunEnvironment;
