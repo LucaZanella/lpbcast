@@ -3,19 +3,10 @@
  */
 package lpbcast;
 
-import java.awt.Color;
 import java.util.HashMap;
-import java.util.HashSet;
 import java.util.Iterator;
 import java.util.Map;
-import java.util.UUID;
 
-import repast.simphony.random.RandomHelper;
-import repast.simphony.space.continuous.ContinuousSpace;
-import repast.simphony.space.continuous.RandomCartesianAdder;
-import repast.simphony.space.graph.EdgeCreatorFactory;
-import repast.simphony.space.graph.Network;
-import repast.simphony.space.graph.RepastEdge;
 import repast.simphony.context.Context;
 import repast.simphony.context.space.continuous.ContinuousSpaceFactory;
 import repast.simphony.context.space.continuous.ContinuousSpaceFactoryFinder;
@@ -23,11 +14,10 @@ import repast.simphony.context.space.graph.NetworkBuilder;
 import repast.simphony.dataLoader.ContextBuilder;
 import repast.simphony.engine.environment.RunEnvironment;
 import repast.simphony.engine.schedule.ScheduleParameters;
-import repast.simphony.engine.schedule.ScheduledMethod;
-import repast.simphony.visualization.*;
-import repast.simphony.visualization.gui.EdgeStyleStep;
-import repast.simphony.visualization.visualization2D.style.EdgeStyle2D;
-import repast.simphony.visualizationOGL2D.EdgeStyleOGL2D;;
+import repast.simphony.random.RandomHelper;
+import repast.simphony.space.continuous.ContinuousSpace;
+import repast.simphony.space.continuous.RandomCartesianAdder;
+import repast.simphony.space.graph.Network;;
 
 /**
  * Represents the context builder of the application.
@@ -86,8 +76,15 @@ public class LpbCastBuilder implements ContextBuilder<Object> {
 		
 		this.currentProcessId = processCount;
 		RunEnvironment.getInstance().getCurrentSchedule().schedule(ScheduleParameters.createRepeating(1, 1, ScheduleParameters.LAST_PRIORITY), ()-> step());
+		
+		//create cusom event
+		Process p = (Process) context.getRandomObjects(Process.class, 1).iterator().next();
+		p.lpbCast();
+		
+		
 		return context;
 	}
+	
 	/**
 	 * Gets the current tick of the simulation
 	 * @return the current tick
@@ -141,9 +138,7 @@ public class LpbCastBuilder implements ContextBuilder<Object> {
 				context.remove(p);
 				it.remove();
 			}
-			
 		}
-		
 		
 	}
 	
