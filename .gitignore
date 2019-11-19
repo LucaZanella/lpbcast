@@ -110,6 +110,7 @@ license.txt
 model_description.txt
 repast-licenses/
 Repast.settings
+lpbcast.rs/
 
 # Logging
 Logging.html
@@ -119,4 +120,7 @@ Logging.txt.lck
 
 # Misc
 velocity.log
-velocity.log.1
+velocity.log.
+
+# Data outputed by simulator
+*.txt
