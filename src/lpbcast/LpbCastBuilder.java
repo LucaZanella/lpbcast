@@ -4,6 +4,8 @@
 package lpbcast;
 
 import java.util.HashMap;
+
+import analysis.Collector;
 import repast.simphony.random.RandomHelper;
 
 import repast.simphony.context.Context;
@@ -25,8 +27,8 @@ public class LpbCastBuilder implements ContextBuilder<Object> {
 	public Context build(Context<Object> context) {
 		context.setId("lpbcast");
 		
-		int processCount = 10;
-		int viewSize = 3;
+		int processCount = 1000;
+		int viewSize = 10;
 		
 		
 		// create processes
@@ -46,6 +48,9 @@ public class LpbCastBuilder implements ContextBuilder<Object> {
 			
 			context.add(new Process(i, view));
 		}
+		
+		// add collector meta-actor in order to perfom analysis of the protocol
+		context.add(new Collector());
 		
 		return context;
 	}

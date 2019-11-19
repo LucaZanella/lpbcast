@@ -13,6 +13,7 @@ import java.util.UUID;
 import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.stream.Collectors;
 
+import analysis.Collector;
 import lpbcast.ActiveRetrieveRequest.Destination;
 import repast.simphony.context.Context;
 import repast.simphony.engine.environment.RunEnvironment;
@@ -192,6 +193,11 @@ public class Process {
 	public void step() {
 		// check whether process should gossip or do nothing 
 		if(!isUnsubscribed) {
+			
+			if(RandomHelper.nextDouble() < 0.001) {
+		    	lpbCast();
+		    }
+			
 			//extract from the receivedMessages queue the messages which arrive at the current tick
 			Iterator<Message> it = this.receivedMessages.iterator();
 			while(it.hasNext()) {
@@ -688,7 +694,14 @@ public class Process {
 	 * @param event the event notification to be delivered
 	 */
 	public void lpbDelivery(Event event) {
-		System.out.println("Deliver event " + event.eventId.id);
+		//System.out.println("Deliver event " + event.eventId.id);
+		
+		//get data collector about delivery and notify it
+		Context<Collector> context = ContextUtils.getContext(this);
+		IndexedIterable<Collector> collection =  context.getObjects(Collector.class);
+		Iterator<Collector> it = collection.iterator();
+		
+		if(it.hasNext()) it.next().notifyMessagePropagation(event);
 	}
 	
 	/**
