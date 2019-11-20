@@ -16,6 +16,7 @@ public class Collector {
 	//public static final boolean ENABLE_DATA_COLLECTION = true; //s dunno if needed
 	
 	private HashMap<UUID, Integer> messagePropagationData;
+	private HashMap<UUID, Integer> recoveriesPerEventData;
 	
 	/**
 	 * Instantiates a new collector, the collector should only be a single one (per run).
@@ -24,6 +25,7 @@ public class Collector {
 	public Collector() {
 		// initialize structures needed to store data
 		messagePropagationData = new HashMap<UUID, Integer>();
+		recoveriesPerEventData = new HashMap<UUID, Integer>();
 	}
 	
 	/**
@@ -59,5 +61,23 @@ public class Collector {
 	public String getTickMessagePropagationData() {
 		return messagePropagationData.toString();
 	}
+	
+	
+	public void notifyRecovery(UUID uuid) {
+		int nRecoveries = this.recoveriesPerEventData.getOrDefault(uuid, 0);
+		this.recoveriesPerEventData.put(uuid, nRecoveries + 1);
+	}
+	public int getRecoveryData() {
+		Object[] values = this.recoveriesPerEventData.values().toArray();
+		int sum = 0;
+		//compute average of recoveries per event
+		for(Object v : values) {
+			int el = (Integer) v;
+			sum = sum + el;
+		}
+		int avg = sum / values.length;
+		return avg;
+	}
+	
 	
 }

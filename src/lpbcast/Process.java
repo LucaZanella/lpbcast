@@ -575,6 +575,8 @@ public class Process {
 						RetrieveRequest retrieveMessage = new RetrieveRequest(this.processId, me.eventId);
 						try {
 							getProcessById(me.sender, ContextUtils.getContext(this)).receive(retrieveMessage);
+							//notify Collector about recovery attempt
+							this.collector.notifyRecovery(retrieveMessage.eventId.id);
 							// Visualize retrieve link
 							if(me.eventId.id.equals(visual.currentVisEvent.eventId.id)) {
 								visual.addLink(this, getProcessById(me.sender, ContextUtils.getContext(this)), Visualization.EdgeType.RETRIEVE_REQUEST);
@@ -711,6 +713,8 @@ public class Process {
 						// send message to a random process in the view
 						try {
 							getProcessById(target, ContextUtils.getContext(this)).receive(randMessage);
+							// notify collector about recovery attempt
+							this.collector.notifyRecovery(randMessage.eventId.id);
 							// Visualize the retrieve edge
 							if(ar.eventId.id.equals(visual.currentVisEvent.eventId.id)) {
 								this.visual.addLink(this, getProcessById(target, ContextUtils.getContext(this)), Visualization.EdgeType.RETRIEVE_REQUEST);
@@ -728,6 +732,8 @@ public class Process {
 						// send message to the originator
 						try {
 							getProcessById(ar.eventId.origin, ContextUtils.getContext(this)).receive(origMessage);
+							// notify collector about recovery attempt
+							this.collector.notifyRecovery(origMessage.eventId.id);
 							// Visualize the retrieve edge
 							if(ar.eventId.id.equals(visual.currentVisEvent.eventId.id)) {
 								this.visual.addLink(this, getProcessById(ar.eventId.origin, ContextUtils.getContext(this)), Visualization.EdgeType.RETRIEVE_REQUEST);
