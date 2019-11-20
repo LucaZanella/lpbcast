@@ -37,13 +37,13 @@
 									
 		/>
 				<parameter name="initial_event_in_system" displayName="Initial Events In System" type="int" 
-						defaultValue="0" 
+						defaultValue="20" 
 						isReadOnly="false" 
 						converter="repast.simphony.parameter.StringConverterFactory$IntConverter"
 									
 		/>
 				<parameter name="node_number" displayName="Node Number" type="int" 
-						defaultValue="10" 
+						defaultValue="1000" 
 						isReadOnly="false" 
 						converter="repast.simphony.parameter.StringConverterFactory$IntConverter"
 									
@@ -67,7 +67,7 @@
 									
 		/>
 				<parameter name="unsub_probability" displayName="Unsubscription Probability (between 0 and 1)" type="float" 
-						defaultValue="1.0E-4" 
+						defaultValue="0.0" 
 						isReadOnly="false" 
 						converter="repast.simphony.parameter.StringConverterFactory$FloatConverter"
 									
@@ -85,7 +85,7 @@
 									
 		/>
 				<parameter name="sub_probability" displayName="Subscription Probability (between 0 and 1)" type="float" 
-						defaultValue="1.0E-4" 
+						defaultValue="0.0" 
 						isReadOnly="false" 
 						converter="repast.simphony.parameter.StringConverterFactory$FloatConverter"
 									
@@ -127,7 +127,7 @@
 									
 		/>
 				<parameter name="event_generation_probability" displayName="Event Generation Probability" type="float" 
-						defaultValue="0.01" 
+						defaultValue="0.0" 
 						isReadOnly="false" 
 						converter="repast.simphony.parameter.StringConverterFactory$FloatConverter"
 									
@@ -139,7 +139,7 @@
 									
 		/>
 				<parameter name="archived_max_size" displayName="Buffer ArchivedEvents Max Size" type="int" 
-						defaultValue="10" 
+						defaultValue="25" 
 						isReadOnly="false" 
 						converter="repast.simphony.parameter.StringConverterFactory$IntConverter"
 									
