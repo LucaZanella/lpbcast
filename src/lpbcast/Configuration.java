@@ -28,6 +28,7 @@ public class Configuration {
 	public static int EVENT_VISUAL_TIME;
 	public static int SUB_VISUAL_TIME;
 	public static int UNSUB_VISUAL_TIME;
+	public static int EVENTS_GENERATED_PER_ROUND;
 	
 	public static void load() {
 		Parameters p = RunEnvironment.getInstance().getParameters();
@@ -55,5 +56,6 @@ public class Configuration {
 		Configuration.EVENT_VISUAL_TIME = p.getInteger("event_visual_time");
 		Configuration.SUB_VISUAL_TIME = p.getInteger("sub_visual_time");
 		Configuration.UNSUB_VISUAL_TIME = p.getInteger("unsub_visual_time");
+		Configuration.EVENTS_GENERATED_PER_ROUND = p.getInteger("events_generated_per_round");
 	}
 }

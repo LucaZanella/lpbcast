@@ -126,6 +126,12 @@
 						converter="repast.simphony.parameter.StringConverterFactory$BooleanConverter"
 									
 		/>
+				<parameter name="events_generated_per_round" displayName="Events Generated Per Round" type="int" 
+						defaultValue="0" 
+						isReadOnly="false" 
+						converter="repast.simphony.parameter.StringConverterFactory$IntConverter"
+									
+		/>
 				<parameter name="event_generation_probability" displayName="Event Generation Probability" type="float" 
 						defaultValue="0.01" 
 						isReadOnly="false" 

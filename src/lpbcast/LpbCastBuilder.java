@@ -6,6 +6,7 @@ package lpbcast;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Map;
+import java.util.UUID;
 
 import analysis.Collector;
 import repast.simphony.context.Context;
@@ -151,6 +152,19 @@ public class LpbCastBuilder implements ContextBuilder<Object> {
 				it.remove();
 			}
 		}
+		
+		//take random processes and lpbcast an event
+		for(int i = 0; i < Configuration.EVENTS_GENERATED_PER_ROUND; i++) {
+			Iterator<Object> prit = context.getRandomObjects(Process.class, 1).iterator();
+			if(prit.hasNext()) {
+				Process p = (Process)prit.next();
+				if(!p.isUnsubscribed) {
+					p.lpbCast();
+				}
+			}
+		}
+				
+		
 		
 	}
 	

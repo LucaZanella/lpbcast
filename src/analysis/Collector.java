@@ -1,6 +1,7 @@
 package analysis;
 
 import java.util.HashMap;
+import java.util.LinkedList;
 import java.util.UUID;
 
 import lpbcast.Event;
@@ -16,6 +17,8 @@ public class Collector {
 	//public static final boolean ENABLE_DATA_COLLECTION = true; //s dunno if needed
 	
 	private HashMap<UUID, Integer> messagePropagationData;
+	private int deliveredEvents;
+	private int redundancies;
 	
 	/**
 	 * Instantiates a new collector, the collector should only be a single one (per run).
@@ -24,6 +27,7 @@ public class Collector {
 	public Collector() {
 		// initialize structures needed to store data
 		messagePropagationData = new HashMap<UUID, Integer>();
+		deliveredEvents = 0;
 	}
 	
 	/**
@@ -45,6 +49,23 @@ public class Collector {
 		this.messagePropagationData.put(uuid, nDeliveries + 1);
 	}
 	
+	public void notifyDeliveredEvent(int processId) {
+		this.deliveredEvents++;
+	}
+	
+	public void notifyRedundancy() {
+		this.redundancies ++;
+	}
+	
+	public void resetDeliveredEvents() {
+		this.deliveredEvents = 0;
+	}
+	
+	public void resetRedundancies() {
+		this.redundancies = 0;
+	}
+	
+	
 	/**
 	 * Reset messagePropagationData to prepare for next tick
 	 */
@@ -59,5 +80,14 @@ public class Collector {
 	public String getTickMessagePropagationData() {
 		return messagePropagationData.toString();
 	}
+	
+	public String getDeliveredEvents() {
+		return Integer.toString(deliveredEvents);
+	}
+	
+	public String getRedundancies() {
+		return Integer.toString(redundancies);
+	}
+	
 	
 }
