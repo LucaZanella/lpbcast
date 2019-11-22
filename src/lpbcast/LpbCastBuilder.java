@@ -151,8 +151,10 @@ public class LpbCastBuilder implements ContextBuilder<Object> {
 			}
 		}
 		
-		// subscription analysis
-		if(getCurrentTick() == 100) {
+		/**
+		 * subscription-analysis
+		 * 
+		 if(getCurrentTick() == 100) {
 			// Simulate node subscription (Remember to set parameters accordingly)
 			currentProcessId = Configuration.INITIAL_NODES_NUMBER;
 			int targetId = RandomHelper.nextIntFromTo(0, Configuration.INITIAL_NODES_NUMBER - 1);
@@ -163,7 +165,6 @@ public class LpbCastBuilder implements ContextBuilder<Object> {
 			subscriber.subscribe(targetId);
 			currentProcessId += 1;
 		}
+		*/
 	}
-	
-
 }
