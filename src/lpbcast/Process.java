@@ -212,6 +212,7 @@ public class Process {
 			//Check missing events
 			this.retrieveMissingMessages();
 			
+			
 			//Generate message if required
 	        if(RandomHelper.nextDouble() < Configuration.EVENT_GENERATION_PROBABILITY) {
 	        	lpbCast();
@@ -548,6 +549,12 @@ public class Process {
 			events.add(newEvent);
 			lpbDelivery(newEvent);
 			eventIds.add(newEvent.eventId);
+		} else {
+			/**
+			 * analysis-redundancy-level
+			 * 
+			 * */
+			//collector.notifyRedundancy();
 		}
 		
 		for(Event event : events) {
@@ -801,9 +808,15 @@ public class Process {
 		/**
 		 * analysis-message-propagation and analysis-event-looping
 		 * 
+		 * 
 		//notify collector about event delivery
 		this.collector.notifyMessagePropagation(event);
-		 */
+		 /**
+		 * analysis-delivery-ratio 
+		 * 
+		 * 
+		//this.collector.notifyDeliveredEvent(processId);
+		*/
 	}
 	
 	/**
