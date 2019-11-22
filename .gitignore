@@ -124,3 +124,12 @@ velocity.log.
 
 # Data outputed by simulator
 *.txt
+
+# Class diagram
+src/class_diagram.ucls
+
+# PyCharm
+python-scripts/.idea
+python-scripts/data
+python-scripts/figures
+python-scripts/venv
