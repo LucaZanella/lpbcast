@@ -4,6 +4,7 @@ import java.util.HashMap;
 import java.util.UUID;
 
 import lpbcast.Event;
+import repast.simphony.engine.environment.RunEnvironment;
 
 /**
  * Agent that supports the operation of data collection needed to perform analysis of the protocol
@@ -16,6 +17,7 @@ public class Collector {
 	//public static final boolean ENABLE_DATA_COLLECTION = true; //s dunno if needed
 	
 	private HashMap<UUID, Integer> messagePropagationData;
+	private HashMap<Integer, Double> subscriptionData;
 	
 	/**
 	 * Instantiates a new collector, the collector should only be a single one (per run).
@@ -24,6 +26,7 @@ public class Collector {
 	public Collector() {
 		// initialize structures needed to store data
 		messagePropagationData = new HashMap<UUID, Integer>();
+		setSubscriptionData(new HashMap<Integer, Double>());
 	}
 	
 	/**
@@ -58,6 +61,23 @@ public class Collector {
 	 */
 	public String getTickMessagePropagationData() {
 		return messagePropagationData.toString();
+	}
+
+	public HashMap<Integer, Double> getSubscriptionData() {
+		return subscriptionData;
+	}
+
+	public void setSubscriptionData(HashMap<Integer, Double> subscriptionData) {
+		this.subscriptionData = subscriptionData;
+	}
+	
+	/**
+	 * Gets the current tick of the simulation.
+	 * 
+	 * @return the current tick
+	 */
+	public double getCurrentTick() {
+		return RunEnvironment.getInstance().getCurrentSchedule().getTickCount();
 	}
 	
 }

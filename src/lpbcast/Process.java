@@ -255,6 +255,11 @@ public class Process {
 		
 		for (Integer sub : gossipMessage.subs) {
 			if(sub != processId) {
+				// subscription analysis
+				if(sub == Configuration.INITIAL_NODES_NUMBER) {
+					collector.getSubscriptionData().putIfAbsent(processId, getCurrentTick());
+				}
+				
 				view.putIfAbsent(sub, 0); // insert new element with frequency 0 if not already in the view
 				view.put(sub, view.get(sub) + 1); // increment frequency of item
 				

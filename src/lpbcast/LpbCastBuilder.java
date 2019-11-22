@@ -78,7 +78,6 @@ public class LpbCastBuilder implements ContextBuilder<Object> {
 			context.add(new Process(i, view, visual, collector));
 		}
 		
-		this.currentProcessId = Configuration.INITIAL_NODES_NUMBER;
 		RunEnvironment.getInstance().getCurrentSchedule().schedule(ScheduleParameters.createRepeating(1, 1, ScheduleParameters.LAST_PRIORITY), ()-> step());
 		
 		/*
@@ -119,7 +118,7 @@ public class LpbCastBuilder implements ContextBuilder<Object> {
 				Process neighbor =  (Process)it.next();
 				HashMap<Integer, Integer> processView = new HashMap<>();
 				processView.put(neighbor.processId, 0);
-				this.currentProcessId ++;
+				this.currentProcessId++;
 				Process newProcess = new Process(this.currentProcessId, processView, this.visual, this.collector);
 				context.add(newProcess);
 				Iterator<Object> ite = context.getAgentLayer(Object.class).iterator();
@@ -152,6 +151,18 @@ public class LpbCastBuilder implements ContextBuilder<Object> {
 			}
 		}
 		
+		// subscription analysis
+		if(getCurrentTick() == 100) {
+			// Simulate node subscription (Remember to set parameters accordingly)
+			currentProcessId = Configuration.INITIAL_NODES_NUMBER;
+			int targetId = RandomHelper.nextIntFromTo(0, Configuration.INITIAL_NODES_NUMBER - 1);
+			HashMap<Integer, Integer> processView = new HashMap<>();
+			processView.put(targetId, 0);
+			Process subscriber = new Process(currentProcessId, processView, visual, collector);
+			context.add(subscriber);
+			subscriber.subscribe(targetId);
+			currentProcessId += 1;
+		}
 	}
 	
 
