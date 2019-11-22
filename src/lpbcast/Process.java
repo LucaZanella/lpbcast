@@ -216,6 +216,14 @@ public class Process {
 	        if(RandomHelper.nextDouble() < Configuration.EVENT_GENERATION_PROBABILITY) {
 	        	lpbCast();
 	        }
+	        
+	        /**
+	         * analysis-event-looping
+	         * 
+	        if(this.processId == 1 && (this.getCurrentTick() % 20 == 0 && this.getCurrentTick() <= 120) ) {
+	        	this.lpbCast();
+	        }
+	         */
 			
 			//Gossip
 			this.gossip();
