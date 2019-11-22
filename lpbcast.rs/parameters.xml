@@ -18,7 +18,7 @@
 						converter="repast.simphony.parameter.StringConverterFactory$IntConverter"
 									
 		/>
-				<parameter name="frequency_based_membership_purging" displayName="Frequency Based Message Purging Optimization" type="boolean" 
+				<parameter name="frequency_based_membership_purging" displayName="Frequency Based Membership Purging Optimization" type="boolean" 
 						defaultValue="true" 
 						isReadOnly="false" 
 						converter="repast.simphony.parameter.StringConverterFactory$BooleanConverter"
@@ -37,13 +37,13 @@
 									
 		/>
 				<parameter name="initial_event_in_system" displayName="Initial Events In System" type="int" 
-						defaultValue="20" 
+						defaultValue="0" 
 						isReadOnly="false" 
 						converter="repast.simphony.parameter.StringConverterFactory$IntConverter"
 									
 		/>
 				<parameter name="node_number" displayName="Node Number" type="int" 
-						defaultValue="100" 
+						defaultValue="15" 
 						isReadOnly="false" 
 						converter="repast.simphony.parameter.StringConverterFactory$IntConverter"
 									
@@ -60,14 +60,14 @@
 						converter="repast.simphony.parameter.StringConverterFactory$IntConverter"
 									
 		/>
-				<parameter name="long_ago" displayName="LONG_AGO (see paper)" type="int" 
+				<parameter name="long_ago" displayName="Same Origin Event Replacement Timeout" type="int" 
 						defaultValue="100" 
 						isReadOnly="false" 
 						converter="repast.simphony.parameter.StringConverterFactory$IntConverter"
 									
 		/>
-				<parameter name="unsub_probability" displayName="Unsubscription Probability (between 0 and 1)" type="float" 
-						defaultValue="0.0" 
+				<parameter name="unsub_probability" displayName="Unsubscription Probability" type="float" 
+						defaultValue="1.0E-4" 
 						isReadOnly="false" 
 						converter="repast.simphony.parameter.StringConverterFactory$FloatConverter"
 									
@@ -78,19 +78,19 @@
 						converter="repast.simphony.parameter.StringConverterFactory$IntConverter"
 									
 		/>
-				<parameter name="k_recovery" displayName="Timeout before message becomes eligible for recovery process" type="int" 
+				<parameter name="k_recovery" displayName="Recovery Eligibility Timeout" type="int" 
 						defaultValue="20" 
 						isReadOnly="false" 
 						converter="repast.simphony.parameter.StringConverterFactory$IntConverter"
 									
 		/>
-				<parameter name="sub_probability" displayName="Subscription Probability (between 0 and 1)" type="float" 
-						defaultValue="0.0" 
+				<parameter name="sub_probability" displayName="Subscription Probability" type="float" 
+						defaultValue="1.0E-4" 
 						isReadOnly="false" 
 						converter="repast.simphony.parameter.StringConverterFactory$FloatConverter"
 									
 		/>
-				<parameter name="age_based_message_purging" displayName="Age Based Message Purgin Optimization" type="boolean" 
+				<parameter name="age_based_message_purging" displayName="Age Based Message Purging Optimization" type="boolean" 
 						defaultValue="true" 
 						isReadOnly="false" 
 						converter="repast.simphony.parameter.StringConverterFactory$BooleanConverter"
@@ -102,8 +102,8 @@
 						converter="repast.simphony.parameter.StringConverterFactory$IntConverter"
 									
 		/>
-				<parameter name="k" displayName="K (frequency multiplier)" type="float" 
-						defaultValue="0.5" 
+				<parameter name="k" displayName="Average Frequency Multiplier" type="float" 
+						defaultValue="0.9" 
 						isReadOnly="false" 
 						converter="repast.simphony.parameter.StringConverterFactory$FloatConverter"
 									
@@ -127,7 +127,7 @@
 									
 		/>
 				<parameter name="event_generation_probability" displayName="Event Generation Probability" type="float" 
-						defaultValue="0.0" 
+						defaultValue="0.01" 
 						isReadOnly="false" 
 						converter="repast.simphony.parameter.StringConverterFactory$FloatConverter"
 									
@@ -144,7 +144,7 @@
 						converter="repast.simphony.parameter.StringConverterFactory$IntConverter"
 									
 		/>
-				<parameter name="recovery_timeout" displayName="Timeout before recovery is done on another source" type="int" 
+				<parameter name="recovery_timeout" displayName="Recovery Source Timeout" type="int" 
 						defaultValue="20" 
 						isReadOnly="false" 
 						converter="repast.simphony.parameter.StringConverterFactory$IntConverter"
