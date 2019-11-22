@@ -585,7 +585,7 @@ public class Process {
 							getProcessById(me.sender, ContextUtils.getContext(this)).receive(retrieveMessage);
 							
 							/**
-							 * analysis-recovery-requests
+							 * analysis-recovery-requests and analysis-recovery-requests-view
 							 * 
 							//notify Collector about recovery attempt
 							this.collector.notifyRecovery(retrieveMessage.eventId.id);
@@ -728,7 +728,7 @@ public class Process {
 						try {
 							getProcessById(target, ContextUtils.getContext(this)).receive(randMessage);
 							/**
-							 * analysis-recovery-requests
+							 * analysis-recovery-requests and analysis-recovery-requests-view
 							 * 
 							// notify collector about recovery attempt
 							this.collector.notifyRecovery(randMessage.eventId.id);
@@ -751,7 +751,7 @@ public class Process {
 						try {
 							getProcessById(ar.eventId.origin, ContextUtils.getContext(this)).receive(origMessage);
 							/**
-							 * analysis-recovery-requests
+							 * analysis-recovery-requests and analysis-recovery-requests-view
 							 *
 							// notify collector about recovery attempt
 							this.collector.notifyRecovery(origMessage.eventId.id);

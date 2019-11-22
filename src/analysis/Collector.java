@@ -14,8 +14,6 @@ import repast.simphony.engine.environment.RunEnvironment;
  */
 public class Collector {
 	
-	//public static final boolean ENABLE_DATA_COLLECTION = true; //s dunno if needed
-	
 	private HashMap<UUID, Integer> messagePropagationData;
 	private HashMap<Integer, Double> subscriptionData;
 	private HashMap<UUID, Integer> recoveriesPerEventData;

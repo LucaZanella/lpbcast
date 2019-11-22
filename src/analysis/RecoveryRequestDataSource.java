@@ -27,7 +27,7 @@ public class RecoveryRequestDataSource implements repast.simphony.data2.Aggregat
 		Iterator<?> it = objs.iterator();
 		if(it.hasNext()) {
 			Collector c = (Collector) it.next();
-			return "avg_recovery=" + c.getRecoveryData() + ", fanout=" + Configuration.F;
+			return "avg_recovery=" + c.getRecoveryData() + ", fanout=" + Configuration.F + ", view=" + Configuration.VIEW_MAX_SIZE;
 		}
 		
 		return "Error in getting MessageRecoveryData";
