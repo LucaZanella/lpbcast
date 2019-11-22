@@ -791,7 +791,7 @@ public class Process {
 			deliveredCurrentVisualEvent = true;
 		}
 		/**
-		 * analysis-message-propagation
+		 * analysis-message-propagation and analysis-event-looping
 		 * 
 		//notify collector about event delivery
 		this.collector.notifyMessagePropagation(event);
