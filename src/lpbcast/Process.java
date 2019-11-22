@@ -770,9 +770,13 @@ public class Process {
 		if(visual.currentVisEvent.eventId.id.equals(event.eventId.id)) {
 			deliveredCurrentVisualEvent = true;
 		}
-
+		
+		/**
+		 * analysis-message-propagation
+		 * 
 		//notify collector about event delivery
 		this.collector.notifyMessagePropagation(event);
+		 */
 	}
 	
 	/**
