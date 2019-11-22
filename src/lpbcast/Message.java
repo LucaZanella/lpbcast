@@ -18,7 +18,7 @@ public abstract class Message {
 	public enum MessageType {GOSSIP, RETRIEVE_REQUEST, RETRIEVE_REPLY}
 	
 	/**
-	 * The tick during which the message is created.
+	 * The tick during which the message must be processed.
 	 */
 	public double tick;
 	/**
