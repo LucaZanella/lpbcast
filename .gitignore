@@ -100,7 +100,6 @@ hs_err_pid*
 
 # Repast Simphony
 MessageCenter.log4j.properties
-data/
 docs/
 freezedried_data/
 icons/
