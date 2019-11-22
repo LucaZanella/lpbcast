@@ -121,9 +121,6 @@ Logging.txt.lck
 velocity.log
 velocity.log.
 
-# Data outputed by simulator
-*.txt
-
 # Class diagram
 src/class_diagram.ucls
 
